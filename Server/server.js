@@ -3,19 +3,29 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
+const errorMiddleware = require("./controllers/errorController");
+const authRoute = require("./routes/authRoute");
+
 dotenv.config();
 const app = express();
-app.use(cors)
 
+// Middleware
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
+// Database Connection
 mongoose
   .connect(process.env.REMOTE_MONGO_URI)
-  .then(() => {
-    console.log("DB connected successfully");
-  })
-  .catch((error) => {
-    console.error("DB connection failed:", error.message);
-  });
+  .then(() => console.log("DB connected successfully"))
+  .catch((error) => console.error("DB connection failed:", error.message));
 
-  app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}...`);
-  })
+// Routes
+app.use("api/v1/auth", authRoute);
+
+// Global Error Handling Middleware
+app.use(errorMiddleware);
+
+// Server
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running...`);
+});
