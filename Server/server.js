@@ -21,7 +21,7 @@ mongoose
   .catch((error) => console.error("DB connection failed:", error.message));
 
 // Routes
-app.use("/api/v1/auth", authRoure);
+app.use("/api/v1/user", authRoure);
 
 // Global Error Handling Middleware
 app.use(errorMiddleware)
