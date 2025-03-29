@@ -143,4 +143,97 @@ exports.GetPostedInternship = catchAsync(async (req, res, next) => {
   });
 });
 
+// company can edit an internship they have posted
+exports.EditMyIntership = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    title,
+    CompanyName,
+    department,
+    duration,
+    description,
+    requiredSkills,
+    location,
+    remote,
+    paid,
+    numPositions,
+    applicationDeadline,
+  } = req.body;
 
+  const internship = await Internship.findById(id);
+  if (!internship) {
+    return next(new AppError("No internship found with this ID", 404));
+  }
+
+  if (internship.companyId.toString() !== req.user._id.toString()) {
+    return next(
+      new AppError("You are not authorized to edit this internship", 403)
+    );
+  }
+
+  const updatedInternship = await Internship.findByIdAndUpdate(
+    id,
+    {
+      title,
+      CompanyName,
+      department,
+      duration,
+      description,
+      requiredSkills,
+      location,
+      remote: remote || false,
+      paid: paid || false,
+      numPositions,
+      applicationDeadline,
+    },
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      internship: updatedInternship,
+    },
+  });
+});
+
+// company can delete an internship they have posted
+exports.DeleteInternship = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const internship = await Internship.findById(id);
+  if (!internship) {
+    return next(new AppError("No internship found with that ID", 404));
+  }
+
+  if (internship.companyId.toString() !== req.user._id.toString()) {
+    return next(
+      new AppError("You are not authorized to delete this internship", 403)
+    );
+  }
+
+  await Internship.findByIdAndDelete(id);
+
+  res.status(204).json({
+    status: "success",
+    message: "Internship deleted successfully",
+  });
+});
+
+// Students Controller
+
+exports.GetInternships = catchAsync(async (req, res, next) => {
+  const internships = await Internship.find({}).populate("companyId", "name");
+
+  if (!internships || internships.length === 0) {
+    return next(new AppError("No internships found", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    results: internships.length,
+    data: {
+      internships,
+    },
+  });
+});
