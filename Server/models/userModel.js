@@ -27,8 +27,7 @@ const userSchema = new mongoose.Schema({
     select: false,
   },
   passwordChangedAt: Date,
-}
-);
+});
 
 // hash or encrypt password before saveing on database
 userSchema.pre("save", async function (next) {
@@ -52,3 +51,8 @@ userSchema.methods.correctPassword = async function (
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
+
+// Export the User model
+const User = mongoose.model("User", userSchema);
+
+module.exports = User;
