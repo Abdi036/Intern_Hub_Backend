@@ -11,21 +11,27 @@ const ApplicationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  resume: { type: String, required: true },
-  coverLetter: { type: String, required: true },
+  resume: {
+    type: String,
+    required: true,
+  },
+  coverLetter: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ["pending", "accepted", "rejected"],
     default: "pending",
   },
-  appliedAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
-
-// Update `updatedAt` before saving
-ApplicationSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
+  appliedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const Application = mongoose.model("Application", ApplicationSchema);

@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
-const Internship = require("../models/intershipModel");
+const sendEmail = require("../utils/email");
+const crypto = require("crypto");
 
 function generateToken(res, _id) {
   const token = jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -14,6 +15,17 @@ function generateToken(res, _id) {
 
   res.cookie("jwt", token, cookieOptions);
   return token;
+}
+
+// function to filter out unwanted fields which is used in updateMyAccount
+function filterObj(obj, ...allowedFields) {
+  const newObj = {};
+  Object.keys(obj).forEach((key) => {
+    if (allowedFields.includes(key)) {
+      newObj[key] = obj[key];
+    }
+  });
+  return newObj;
 }
 
 exports.Signup = catchAsync(async (req, res, next) => {
@@ -41,7 +53,13 @@ exports.Signin = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select("+password");
 
-  if (!user || !(await user.correctPassword(password, user.password))) {
+  if (!user) {
+    return next(
+      new AppError("No user found with this email please signup!", 404)
+    );
+  }
+
+  if (!(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect email or password!", 401));
   }
 
@@ -53,187 +71,139 @@ exports.Signin = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.PostInternship = catchAsync(async (req, res, next) => {
-  const {
-    title,
-    CompanyName,
-    department,
-    duration,
-    description,
-    requiredSkills,
-    location,
-    remote,
-    paid,
-    numPositions,
-    applicationDeadline,
-  } = req.body;
+exports.ForgotPassword = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
 
-  if (
-    !title ||
-    !CompanyName ||
-    !department ||
-    !duration ||
-    !description ||
-    !requiredSkills ||
-    !location ||
-    !numPositions ||
-    !applicationDeadline
-  ) {
+  if (!user) {
+    return next(new AppError("User not found!", 404));
+  }
+
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetURL = `${req.protocol}://localhost:3000/api/v1/user/reset-password/${resetToken}`;
+
+  const textMessage = `If you forgot your password, click the link below to reset it: ${resetURL}.\nIf you didn't request this, please ignore this email.`;
+
+  const htmlMessage = `
+    <p>If you forgot your password, click the link below to reset it:</p>
+    <a href="${resetURL}">Reset Password</a>
+    <p>If you didn't request this, please ignore this email.</p>
+  `;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your password reset token (valid for 10 minutes)",
+      text: textMessage,
+      html: htmlMessage,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Token sent to email",
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    console.log(err);
+    await user.save({ validateBeforeSave: false });
+
     return next(
       new AppError(
-        "All required fields must be provided to post an internship!",
+        "There was an error sending the email. Try again later!",
+        500
+      )
+    );
+  }
+});
+
+exports.ResetPassword = catchAsync(async (req, res, next) => {
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new AppError("Token is invalid or has expired", 400));
+  }
+  user.password = req.body.password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  const token = generateToken(res, user._id);
+
+  res.status(200).json({
+    status: "success",
+    token,
+  });
+});
+
+exports.UpdatePassword = catchAsync(async (req, res, next) => {
+  // 1) Get user from collection
+  const user = await User.findById(req.user.id).select("+password");
+  // 2) Check if the posted current password is correct
+  if (!(await user.correctPassword(req.body.currentPassword, user.password))) {
+    return next(new AppError("Current password is incorrect", 401));
+  }
+
+  // 3) Update password
+  user.password = req.body.password;
+  await user.save();
+
+  // 4) Log user in, send JWT
+  const token = generateToken(res, user._id);
+  res.status(200).json({
+    status: "success",
+    token,
+  });
+});
+
+exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
+  // 1) Create an error if user tries to update password
+  if (req.body.password) {
+    return next(
+      new AppError(
+        "This route is not for password updates. Please use /updatePassword.",
         400
       )
     );
   }
 
-  const internship = await Internship.create({
-    title,
-    CompanyName,
-    department,
-    duration,
-    description,
-    requiredSkills,
-    location,
-    remote: remote || false,
-    paid: paid || false,
-    numPositions,
-    applicationDeadline,
-    companyId: req.user._id,
+  // 2) Filter out unwanted fields
+  // added photo
+  const filteredBody = filterObj(req.body, "name", "email");
+
+  // 3) Update user document
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+    new: true,
+    runValidators: true,
   });
-
-  res.status(201).json({
-    status: "success",
-    data: {
-      internship,
-    },
-  });
-});
-
-// company can see all the internships they have posted
-exports.GetAllMycompanyInternships = catchAsync(async (req, res, next) => {
-  const internships = await Internship.find({ companyId: req.user._id });
-
-  if (!internships || internships.length === 0) {
-    return next(new AppError("No internships found for this company", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    results: internships.length,
-    data: {
-      internships,
-    },
-  });
-});
-
-// company can get a specific internship they have posted
-exports.GetPostedInternship = catchAsync(async (req, res, next) => {
-  const internship = await Internship.findById(req.params.id);
-
-  if (!internship) {
-    return next(new AppError("No internship found with that ID", 404));
-  }
 
   res.status(200).json({
     status: "success",
     data: {
-      internship,
+      user: updatedUser,
     },
   });
 });
 
-// company can edit an internship they have posted
-exports.EditMyIntership = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const {
-    title,
-    CompanyName,
-    department,
-    duration,
-    description,
-    requiredSkills,
-    location,
-    remote,
-    paid,
-    numPositions,
-    applicationDeadline,
-  } = req.body;
+exports.DeleteMyAccount = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndDelete(req.user.id);
 
-  const internship = await Internship.findById(id);
-  if (!internship) {
-    return next(new AppError("No internship found with this ID", 404));
+  if (!user) {
+    return next(new AppError("No user found with that ID", 404));
   }
-
-  if (internship.companyId.toString() !== req.user._id.toString()) {
-    return next(
-      new AppError("You are not authorized to edit this internship", 403)
-    );
-  }
-
-  const updatedInternship = await Internship.findByIdAndUpdate(
-    id,
-    {
-      title,
-      CompanyName,
-      department,
-      duration,
-      description,
-      requiredSkills,
-      location,
-      remote: remote || false,
-      paid: paid || false,
-      numPositions,
-      applicationDeadline,
-    },
-    { new: true, runValidators: true }
-  );
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      internship: updatedInternship,
-    },
-  });
-});
-
-// company can delete an internship they have posted
-exports.DeleteInternship = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-
-  const internship = await Internship.findById(id);
-  if (!internship) {
-    return next(new AppError("No internship found with that ID", 404));
-  }
-
-  if (internship.companyId.toString() !== req.user._id.toString()) {
-    return next(
-      new AppError("You are not authorized to delete this internship", 403)
-    );
-  }
-
-  await Internship.findByIdAndDelete(id);
 
   res.status(204).json({
     status: "success",
-    message: "Internship deleted successfully",
-  });
-});
-
-// Students Controller
-
-exports.GetInternships = catchAsync(async (req, res, next) => {
-  const internships = await Internship.find({}).populate("companyId", "name");
-
-  if (!internships || internships.length === 0) {
-    return next(new AppError("No internships found", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    results: internships.length,
-    data: {
-      internships,
-    },
+    data: null,
   });
 });

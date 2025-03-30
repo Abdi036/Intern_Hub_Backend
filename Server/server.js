@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
-const authRoure = require("./routes/authRoute");
+const authRoute = require("./routes/authRoute");
+const InternsRoute = require("./routes/InternshipRoute");
 const errorMiddleware = require("./middleware/errorMiddleware");
-
 
 dotenv.config();
 const app = express();
@@ -21,10 +21,11 @@ mongoose
   .catch((error) => console.error("DB connection failed:", error.message));
 
 // Routes
-app.use("/api/v1/user", authRoure);
+app.use("/api/v1/user", authRoute);
+app.use("/api/v1/internships", InternsRoute);
 
 // Global Error Handling Middleware
-app.use(errorMiddleware)
+app.use(errorMiddleware);
 
 // Server
 app.listen(process.env.PORT, () => {

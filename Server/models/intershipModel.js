@@ -1,24 +1,49 @@
 const mongoose = require("mongoose");
 
 const InternshipSchema = new mongoose.Schema({
-  title: { type: String, required: [true, "Internship needs a title"] },
-  CompanyName: { type: String, required: [true, "CompanyName is required"] },
+  title: {
+    type: String,
+    required: [true, "Internship needs a title"],
+  },
+  CompanyName: {
+    type: String,
+    required: [true, "CompanyName is required"],
+  },
   department: {
+    type: String,
+    required: [true, "Internship needs a department"],
+  },
+  startDate: {
+    type: Date,
+    required: [true, "Internship needs a start date"],
+  },
+  endDate: {
+    type: Date,
+    required: [true, "Internship needs an end date"],
+  },
+  description: {
     type: String,
     required: [true, "Internship needs a description"],
   },
-  duration: { type: String, required: [true, "Internship needs a duration"] },
-  description: { type: String, required: [, "Internship needs a description"] },
   requiredSkills: {
     type: [String],
-    required: [true, "Internship needs a skillsets"],
+    required: [true, "Internship needs required skillsets"],
   },
-  location: { type: String, required: [true, "Internship needs a location"] },
-  remote: { type: Boolean, default: false },
-  paid: { type: Boolean, default: false },
+  location: {
+    type: String,
+    required: [true, "Internship needs a location"],
+  },
+  remote: {
+    type: Boolean,
+    default: false,
+  },
+  paid: {
+    type: Boolean,
+    default: false,
+  },
   numPositions: {
     type: Number,
-    required: [true, "Specify Number of Interns you want"],
+    required: [true, "Specify the number of interns you want"],
   },
   applicationDeadline: {
     type: Date,
