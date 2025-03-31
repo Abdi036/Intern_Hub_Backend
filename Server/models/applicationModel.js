@@ -11,13 +11,26 @@ const ApplicationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  resume: {
-    type: String,
-    required: true,
-  },
   coverLetter: {
     type: String,
     required: true,
+    validate: {
+      validator: function (v) {
+        return v.endsWith(".pdf");
+      },
+      message: "Cover letter must be a PDF file!",
+    },
+  },
+  portfolio: {
+    type: String,
+    validate: {
+      validator: function (v) {
+        return /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,6})([\/\w .-]*)*\/?$/.test(
+          v
+        );
+      },
+      message: "Invalid URL format!",
+    },
   },
   status: {
     type: String,
@@ -25,10 +38,6 @@ const ApplicationSchema = new mongoose.Schema({
     default: "pending",
   },
   appliedAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
     type: Date,
     default: Date.now,
   },
