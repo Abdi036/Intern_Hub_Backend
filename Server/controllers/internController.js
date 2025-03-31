@@ -2,6 +2,7 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const Internship = require("../models/intershipModel");
 const User = require("../models/userModel");
+const Application = require("../models/applicationModel");
 
 exports.PostInternship = catchAsync(async (req, res, next) => {
   const {
@@ -198,10 +199,10 @@ exports.GetInternships = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.ApplyInternship = catchAsync(async (req, res, next) => {
   const { internshipId } = req.params;
   const studentId = req.user.id;
+  const { coverLetter, portfolio } = req.body;
 
   const internship = await Internship.findById(internshipId);
   if (!internship) {
@@ -214,12 +215,25 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Create application record
+  const application = await Application.create({
+    internshipId,
+    studentId,
+    coverLetter,
+    portfolio,
+    status: 'pending'
+  });
+
+  // Add student to internship applicants
   internship.applicants.push(studentId);
   await internship.save();
 
   res.status(200).json({
     status: "success",
     message: "Successfully applied for the internship",
+    data: {
+      application
+    }
   });
 });
 
@@ -290,6 +304,47 @@ exports.GetAllApplicants = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.GetApplication = catchAsync(async (req, res, next) => {
+  const { internshipId } = req.params;
+  const studentId = req.user._id;
+
+  // Find the application with internship details
+  const application = await Application.findOne({
+    internshipId,
+    studentId
+  }).populate('internshipId', 'title CompanyName department startDate endDate location remote paid applicationDeadline');
+
+  if (!application) {
+    return next(new AppError("Application not found", 404));
+  }
+
+  // Format the response
+  const applicationDetails = {
+    applicationId: application._id,
+    internship: {
+      title: application.internshipId.title,
+      companyName: application.internshipId.CompanyName,
+      department: application.internshipId.department,
+      startDate: application.internshipId.startDate,
+      endDate: application.internshipId.endDate,
+      location: application.internshipId.location,
+      remote: application.internshipId.remote,
+      paid: application.internshipId.paid,
+      applicationDeadline: application.internshipId.applicationDeadline
+    },
+    application: {
+      coverLetter: application.coverLetter,
+      portfolio: application.portfolio,
+      status: application.status,
+      appliedAt: application.appliedAt
+    }
+  };
+
+  res.status(200).json({
+    status: "success",
+    data: applicationDetails
+  });
+});
 
 // Get a specific applicant for a specific internship (Company)
 exports.GetApplicant = catchAsync(async (req, res, next) => {
@@ -309,15 +364,70 @@ exports.GetApplicant = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Get the application details including cover letter and portfolio
+  const application = await Application.findOne({
+    internshipId,
+    studentId: applicantId
+  });
+
+  if (!application) {
+    return next(new AppError("Application details not found", 404));
+  }
+
+  // Get the applicant's basic information
   const applicant = await User.findById(applicantId).select("name email");
 
   if (!applicant) {
     return next(new AppError("Applicant not found", 404));
   }
 
+  // Combine all information
+  const applicantDetails = {
+    ...applicant.toObject(),
+    application: {
+      coverLetter: application.coverLetter,
+      portfolio: application.portfolio,
+      appliedAt: application.appliedAt
+    }
+  };
+
   res.status(200).json({
     status: "success",
-    data: applicant,
+    data: applicantDetails
   });
 });
 
+exports.DeleteApplication = catchAsync(async (req, res, next) => {
+  const { internshipId } = req.params;
+  const studentId = req.user._id;
+
+  // Find the application
+  const application = await Application.findOne({
+    internshipId,
+    studentId
+  });
+
+  if (!application) {
+    return next(new AppError("Application not found", 404));
+  }
+
+  // Find the internship and remove student from applicants array
+  const internship = await Internship.findById(internshipId);
+  if (!internship) {
+    return next(new AppError("Internship not found", 404));
+  }
+
+  // Remove student from applicants array
+  internship.applicants = internship.applicants.filter(
+    applicant => applicant.toString() !== studentId.toString()
+  );
+  await internship.save();
+
+  // Delete the application
+  await Application.findByIdAndDelete(application._id);
+
+  res.status(204).json({
+    status: "success",
+    message: "Application deleted successfully"
+  });
+});

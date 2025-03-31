@@ -14,6 +14,9 @@ const {
   GetAllApplicants,
   GetApplicant,
   GetMyApplications,
+  SeeApplicationStatus,
+  DeleteApplication,
+  GetApplication,
 } = require("../controllers/internController");
 
 // COMPANY ROUTES
@@ -32,12 +35,23 @@ router.get("/", protect, restrictTo("student"), GetInternships);
 // Get all applications for the logged-in student - This needs to be before parameterized routes
 router.get("/my-applications", protect, restrictTo("student"), GetMyApplications);
 
+// Get specific application details
+router.get("/:internshipId/application", protect, restrictTo("student"), GetApplication);
+
 // apply for internship
 router.post(
   "/:internshipId/apply",
   protect,
   restrictTo("student"),
   ApplyInternship
+);
+
+// Delete application
+router.delete(
+  "/:internshipId/delete-application",
+  protect,
+  restrictTo("student"),
+  DeleteApplication
 );
 
 router.get(
