@@ -3,6 +3,8 @@ const AppError = require("../utils/appError");
 const Internship = require("../models/intershipModel");
 const User = require("../models/userModel");
 const Application = require("../models/applicationModel");
+const fs = require('fs');
+const path = require('path');
 
 exports.PostInternship = catchAsync(async (req, res, next) => {
   const {
@@ -200,40 +202,58 @@ exports.GetInternships = catchAsync(async (req, res, next) => {
 });
 
 exports.ApplyInternship = catchAsync(async (req, res, next) => {
-  const { internshipId } = req.params;
-  const studentId = req.user.id;
-  const { coverLetter, portfolio } = req.body;
-
-  const internship = await Internship.findById(internshipId);
+  // 1) Check if internship exists
+  const internship = await Internship.findById(req.params.internshipId);
   if (!internship) {
-    return next(new AppError("Internship not found", 404));
+    return next(new AppError("No internship found with that ID", 404));
   }
 
-  if (internship.applicants.includes(studentId)) {
-    return next(
-      new AppError("You have already applied for this internship", 400)
-    );
-  }
-
-  // Create application record
-  const application = await Application.create({
-    internshipId,
-    studentId,
-    coverLetter,
-    portfolio,
-    status: 'pending'
+  // 2) Check if user has already applied
+  const existingApplication = await Application.findOne({
+    internshipId: req.params.internshipId,
+    studentId: req.user._id,
   });
 
-  // Add student to internship applicants
-  internship.applicants.push(studentId);
+  if (existingApplication) {
+    return next(new AppError("You have already applied for this internship", 400));
+  }
+
+  // 3) Handle PDF upload
+  if (!req.file) {
+    return next(new AppError("Please upload your cover letter as a PDF file", 400));
+  }
+
+  // 4) Save PDF file
+  const pdfFilename = `cover-letter-${req.user._id}-${Date.now()}.pdf`;
+  const pdfPath = path.join('public', 'documents', 'cover-letters', pdfFilename);
+  
+  // Ensure directory exists
+  const dir = path.dirname(pdfPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  // Save the PDF file
+  fs.writeFileSync(pdfPath, req.file.buffer);
+
+  // 5) Create application
+  const application = await Application.create({
+    internshipId: req.params.internshipId,
+    studentId: req.user._id,
+    coverLetter: pdfFilename,
+    portfolio: req.body.portfolio,
+    status: "pending",
+  });
+
+  // 6) Add student to internship's applicants array
+  internship.applicants.push(req.user._id);
   await internship.save();
 
-  res.status(200).json({
+  res.status(201).json({
     status: "success",
-    message: "Successfully applied for the internship",
     data: {
-      application
-    }
+      application,
+    },
   });
 });
 

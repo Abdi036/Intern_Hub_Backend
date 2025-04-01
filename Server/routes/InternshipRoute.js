@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
+const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
 
 const router = express.Router();
 
@@ -43,6 +44,7 @@ router.post(
   "/:internshipId/apply",
   protect,
   restrictTo("student"),
+  pdfUpload.single("coverLetter"),
   ApplyInternship
 );
 
