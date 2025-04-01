@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema({
     enum: ["student", "company"],
     required: [true, "User must have a role"],
   },
+  photo: {
+    type: String,
+    default: 'default-user.jpg'
+  },
   password: {
     type: String,
     required: [true, "User must have a password"],

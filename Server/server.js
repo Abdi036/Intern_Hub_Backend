@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const setupDefaultImage = require('./utils/setupDefaultImage');
 
 const authRoute = require("./routes/authRoute");
 const InternsRoute = require("./routes/InternshipRoute");
@@ -13,6 +14,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Setup default image
+setupDefaultImage();
 
 // Database Connection
 mongoose

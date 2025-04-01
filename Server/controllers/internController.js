@@ -182,38 +182,9 @@ exports.DeleteInternship = catchAsync(async (req, res, next) => {
   });
 });
 
-// Students Controller to get all the internships
-// exports.GetInternships = catchAsync(async (req, res, next) => {
-//   const internships = await Internship.find({}).populate("companyId", "name");
-
-//   if (!internships || internships.length === 0) {
-//     return next(new AppError("No internships found", 404));
-//   }
-
-//   res.status(200).json({
-//     status: "success",
-//     results: internships.length,
-//     data: {
-//       internships,
-//     },
-//   });
-// });
-
+// Students Controller
 exports.GetInternships = catchAsync(async (req, res, next) => {
-  const { sortBy } = req.query;
-
-  let sortOptions = {};
-
-  sortOptions =
-    sortBy === "name"
-      ? { name: 1 }
-      : sortBy === "date"
-      ? { createdAt: -1 }
-      : {};
-
-  const internships = await Internship.find({})
-    .populate("companyId", "name")
-    .sort(sortOptions);
+  const internships = await Internship.find({}).populate("companyId", "name");
 
   if (!internships || internships.length === 0) {
     return next(new AppError("No internships found", 404));
@@ -250,7 +221,7 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     studentId,
     coverLetter,
     portfolio,
-    status: "pending",
+    status: 'pending'
   });
 
   // Add student to internship applicants
@@ -261,8 +232,8 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     status: "success",
     message: "Successfully applied for the internship",
     data: {
-      application,
-    },
+      application
+    }
   });
 });
 
@@ -272,17 +243,16 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
 
     // Find all internships where the student has applied
     const internships = await Internship.find({
-      applicants: studentId,
-    }).populate("companyId", "name");
+      applicants: studentId
+    }).populate('companyId', 'name');
+
 
     if (!internships || internships.length === 0) {
-      return next(
-        new AppError("You have not applied for any internships yet", 404)
-      );
+      return next(new AppError('You have not applied for any internships yet', 404));
     }
 
     // Format the response to include relevant information
-    const applications = internships.map((internship) => ({
+    const applications = internships.map(internship => ({
       internshipId: internship._id,
       title: internship.title,
       companyName: internship.CompanyName,
@@ -292,50 +262,35 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
       location: internship.location,
       remote: internship.remote,
       paid: internship.paid,
-      applicationStatus: "Pending",
+      applicationStatus: 'Pending',
       applicationDeadline: internship.applicationDeadline,
       numPositions: internship.numPositions,
       currentApplicants: internship.applicants.length,
       description: internship.description,
-      requiredSkills: internship.requiredSkills,
+      requiredSkills: internship.requiredSkills
     }));
 
     res.status(200).json({
-      status: "success",
+      status: 'success',
       results: applications.length,
       data: {
-        applications,
-      },
+        applications
+      }
     });
   } catch (error) {
-    console.error("Error in GetMyApplications:", error);
+    console.error('Error in GetMyApplications:', error);
     next(error);
   }
 });
-
 // Get all applicants for a specific internship (Company)
 exports.GetAllApplicants = catchAsync(async (req, res, next) => {
   const { internshipId } = req.params;
-  const companyId = req.user.id;
-  const { sortBy } = req.query;
+  const companyId = req.user.id;  
 
-  // Find the internship and populate applicants
   const internship = await Internship.findOne({
     _id: internshipId,
     companyId,
-  }).populate({
-    path: "applicants",
-    select: "name email createdAt",
-    options: {
-      sort:
-        sortBy === "name"
-          ? { name: 1 }
-          : sortBy === "date"
-          ? { createdAt: -1 }
-          : {},
-    },
-  });
-
+  }).populate("applicants", "name email");
   if (!internship) {
     return next(
       new AppError("No internship found or unauthorized access", 404)
@@ -356,11 +311,8 @@ exports.GetApplication = catchAsync(async (req, res, next) => {
   // Find the application with internship details
   const application = await Application.findOne({
     internshipId,
-    studentId,
-  }).populate(
-    "internshipId",
-    "title CompanyName department startDate endDate location remote paid applicationDeadline"
-  );
+    studentId
+  }).populate('internshipId', 'title CompanyName department startDate endDate location remote paid applicationDeadline');
 
   if (!application) {
     return next(new AppError("Application not found", 404));
@@ -378,19 +330,19 @@ exports.GetApplication = catchAsync(async (req, res, next) => {
       location: application.internshipId.location,
       remote: application.internshipId.remote,
       paid: application.internshipId.paid,
-      applicationDeadline: application.internshipId.applicationDeadline,
+      applicationDeadline: application.internshipId.applicationDeadline
     },
     application: {
       coverLetter: application.coverLetter,
       portfolio: application.portfolio,
       status: application.status,
-      appliedAt: application.appliedAt,
-    },
+      appliedAt: application.appliedAt
+    }
   };
 
   res.status(200).json({
     status: "success",
-    data: applicationDetails,
+    data: applicationDetails
   });
 });
 
@@ -415,7 +367,7 @@ exports.GetApplicant = catchAsync(async (req, res, next) => {
   // Get the application details including cover letter and portfolio
   const application = await Application.findOne({
     internshipId,
-    studentId: applicantId,
+    studentId: applicantId
   });
 
   if (!application) {
@@ -435,13 +387,13 @@ exports.GetApplicant = catchAsync(async (req, res, next) => {
     application: {
       coverLetter: application.coverLetter,
       portfolio: application.portfolio,
-      appliedAt: application.appliedAt,
-    },
+      appliedAt: application.appliedAt
+    }
   };
 
   res.status(200).json({
     status: "success",
-    data: applicantDetails,
+    data: applicantDetails
   });
 });
 
@@ -452,7 +404,7 @@ exports.DeleteApplication = catchAsync(async (req, res, next) => {
   // Find the application
   const application = await Application.findOne({
     internshipId,
-    studentId,
+    studentId
   });
 
   if (!application) {
@@ -467,7 +419,7 @@ exports.DeleteApplication = catchAsync(async (req, res, next) => {
 
   // Remove student from applicants array
   internship.applicants = internship.applicants.filter(
-    (applicant) => applicant.toString() !== studentId.toString()
+    applicant => applicant.toString() !== studentId.toString()
   );
   await internship.save();
 
@@ -476,6 +428,6 @@ exports.DeleteApplication = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: "success",
-    message: "Application deleted successfully",
+    message: "Application deleted successfully"
   });
 });

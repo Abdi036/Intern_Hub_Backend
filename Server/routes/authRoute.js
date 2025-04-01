@@ -12,6 +12,7 @@ const {
   UpdateMyAccount,
   DeleteMyAccount,
 } = require("../controllers/userController");
+const { upload } = require("../middleware/uploadMiddleware");
 
 router
   .post("/signup", Signup)
@@ -19,7 +20,15 @@ router
   .post("/forgot-password", ForgotPassword);
 router.patch("/reset-password/:token", ResetPassword);
 router.patch("/update-password", protect, UpdatePassword);
-router.patch("/update-me", protect, UpdateMyAccount);
+// router.patch("/update-me", protect, UpdateMyAccount);
+router.patch(
+  "/update-me",
+  protect,
+  upload.single("photo"),
+  UpdateMyAccount
+);
 router.delete("/delete-me", protect, DeleteMyAccount);
 
 module.exports = router;
+
+

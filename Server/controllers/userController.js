@@ -4,6 +4,7 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const sendEmail = require("../utils/email");
 const crypto = require("crypto");
+const { processImage } = require("../middleware/uploadMiddleware");
 
 function generateToken(res, _id) {
   const token = jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -71,43 +72,110 @@ exports.Signin = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.ForgotPassword = catchAsync(async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email });
+// v1 forgot password
+// exports.ForgotPassword = catchAsync(async (req, res, next) => {
+//   const user = await User.findOne({ email: req.body.email });
 
+//   if (!user) {
+//     return next(new AppError("User not found!", 404));
+//   }
+
+//   const resetToken = user.createPasswordResetToken();
+//   await user.save({ validateBeforeSave: false });
+
+//   const resetURL = `${req.protocol}://localhost:3000/api/v1/user/reset-password/${resetToken}`;
+
+//   const textMessage = `If you forgot your password, click the link below to reset it: ${resetURL}.\nIf you didn't request this, please ignore this email.`;
+
+//   const htmlMessage = `
+//     <p>If you forgot your password, click the link below to reset it:</p>
+//     <a href="${resetURL}">Reset Password</a>
+//     <p>If you didn't request this, please ignore this email.</p>
+//   `;
+
+//   try {
+//     await sendEmail({
+//       email: user.email,
+//       subject: "Your password reset token (valid for 10 minutes)",
+//       text: textMessage,
+//       html: htmlMessage,
+//     });
+
+//     res.status(200).json({
+//       status: "success",
+//       message: "Token sent to email",
+//     });
+//   } catch (err) {
+//     user.passwordResetToken = undefined;
+//     user.passwordResetExpires = undefined;
+
+//     console.log(err);
+//     await user.save({ validateBeforeSave: false });
+
+//     return next(
+//       new AppError(
+//         "There was an error sending the email. Try again later!",
+//         500
+//       )
+//     );
+//   }
+// });
+
+// v2 ForgotPassword
+exports.ForgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on POSTed email
+  const user = await User.findOne({ email: req.body.email });
   if (!user) {
-    return next(new AppError("User not found!", 404));
+    return next(new AppError("There is no user with that email address.", 404));
   }
 
+  // 2) Generate the random reset token
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetURL = `${req.protocol}://localhost:3000/api/v1/user/reset-password/${resetToken}`;
+  // 3) Send it to user's email
+  const resetURL = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/user/reset-password/${resetToken}`;
 
-  const textMessage = `If you forgot your password, click the link below to reset it: ${resetURL}.\nIf you didn't request this, please ignore this email.`;
+  const message = `Forgot your password? Submit a PATCH request with your new password to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
 
   const htmlMessage = `
-    <p>If you forgot your password, click the link below to reset it:</p>
-    <a href="${resetURL}">Reset Password</a>
-    <p>If you didn't request this, please ignore this email.</p>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Password Reset Request</h2>
+      <p>Hello,</p>
+      <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
+      <p>To reset your password, click the button below:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetURL}" 
+           style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Reset Password
+        </a>
+      </div>
+      <p>Or copy and paste this link in your browser:</p>
+      <p style="word-break: break-all; color: #666;">${resetURL}</p>
+      <p>This link will expire in 10 minutes.</p>
+      <p>If you didn't request this password reset, please ignore this email.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #666; font-size: 12px;">This is an automated message, please do not reply to this email.</p>
+    </div>
   `;
 
   try {
     await sendEmail({
       email: user.email,
-      subject: "Your password reset token (valid for 10 minutes)",
-      text: textMessage,
-      html: htmlMessage,
+      subject: "Your password reset token (valid for 10 min)",
+      message,
+      html: htmlMessage
     });
 
     res.status(200).json({
       status: "success",
-      message: "Token sent to email",
+      message: "Token sent to email!",
     });
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-
-    console.log(err);
     await user.save({ validateBeforeSave: false });
 
     return next(
@@ -117,7 +185,7 @@ exports.ForgotPassword = catchAsync(async (req, res, next) => {
       )
     );
   }
-});
+}); 
 
 exports.ResetPassword = catchAsync(async (req, res, next) => {
   const hashedToken = crypto
@@ -166,20 +234,56 @@ exports.UpdatePassword = catchAsync(async (req, res, next) => {
   });
 });
 
+// v1 update my account
+// exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
+//   // 1) Create an error if user tries to update password
+//   if (req.body.password) {
+//     return next(
+//       new AppError(
+//         "This route is not for password updates. Please use /updatePassword.",
+//         400
+//       )
+//     );
+//   }
+
+//   // 2) Filter out unwanted fields
+//   // added photo
+//   const filteredBody = filterObj(req.body, "name", "email");
+
+//   // 3) Update user document
+//   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+//     new: true,
+//     runValidators: true,
+//   });
+
+//   res.status(200).json({
+//     status: "success",
+//     data: {
+//       user: updatedUser,
+//     },
+//   });
+// });
+
+// v2 UpdateMyAccount
 exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
-  // 1) Create an error if user tries to update password
-  if (req.body.password) {
+  // 1) Create error if user POSTs password data
+  if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        "This route is not for password updates. Please use /updatePassword.",
+        "This route is not for password updates. Please use /updateMyPassword.",
         400
       )
     );
   }
 
-  // 2) Filter out unwanted fields
-  // added photo
-  const filteredBody = filterObj(req.body, "name", "email");
+  // 2) Filtered out unallowed fields names that are not allowed to be updated
+  const filteredBody = filterObj(req.body, "name", "email","photo");
+  
+  // 3) Handle photo upload if present
+  if (req.file) {
+    const filename = await processImage(req.file, req.user.id);
+    filteredBody.photo = filename;
+  }
 
   // 3) Update user document
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
@@ -207,3 +311,5 @@ exports.DeleteMyAccount = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+
