@@ -484,17 +484,20 @@ exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid status. Must be 'accepted' or 'rejected'", 400));
   }
 
-  // Find the application and populate internship details
+  // Find the application and populate internship details including companyId
   const application = await Application.findById(applicationId)
     .populate('studentId', 'name email')
-    .populate('internshipId', 'title CompanyName department startDate endDate');
+    .populate({
+      path: 'internshipId',
+      select: 'title CompanyName department startDate endDate companyId'
+    });
 
   if (!application) {
     return next(new AppError("Application not found", 404));
   }
 
   // Verify company owns the internship
-  if (application.internshipId.companyId.toString() !== companyId.toString()) {
+  if (!application.internshipId || application.internshipId.companyId.toString() !== companyId.toString()) {
     return next(new AppError("You are not authorized to update this application", 403));
   }
 
@@ -550,7 +553,6 @@ exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error sending email:', error);
-    // Continue with the response even if email fails
   }
 
   res.status(200).json({
