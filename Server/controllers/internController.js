@@ -3,6 +3,7 @@ const AppError = require("../utils/appError");
 const Internship = require("../models/intershipModel");
 const User = require("../models/userModel");
 const Application = require("../models/applicationModel");
+const sendEmail = require("../utils/email");
 const fs = require('fs');
 const path = require('path');
 
@@ -261,40 +262,41 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
   try {
     const studentId = req.user._id;
 
-    // Find all internships where the student has applied
-    const internships = await Internship.find({
-      applicants: studentId
-    }).populate('companyId', 'name');
+    // Find all applications for the student
+    const applications = await Application.find({ studentId })
+      .populate('internshipId', 'title CompanyName department startDate endDate location remote paid applicationDeadline numPositions description requiredSkills');
 
-
-    if (!internships || internships.length === 0) {
+    if (!applications || applications.length === 0) {
       return next(new AppError('You have not applied for any internships yet', 404));
     }
 
     // Format the response to include relevant information
-    const applications = internships.map(internship => ({
-      internshipId: internship._id,
-      title: internship.title,
-      companyName: internship.CompanyName,
-      department: internship.department,
-      startDate: internship.startDate,
-      endDate: internship.endDate,
-      location: internship.location,
-      remote: internship.remote,
-      paid: internship.paid,
-      applicationStatus: 'Pending',
-      applicationDeadline: internship.applicationDeadline,
-      numPositions: internship.numPositions,
-      currentApplicants: internship.applicants.length,
-      description: internship.description,
-      requiredSkills: internship.requiredSkills
+    const formattedApplications = applications.map(application => ({
+      applicationId: application._id,
+      internshipId: application.internshipId._id,
+      title: application.internshipId.title,
+      companyName: application.internshipId.CompanyName,
+      department: application.internshipId.department,
+      startDate: application.internshipId.startDate,
+      endDate: application.internshipId.endDate,
+      location: application.internshipId.location,
+      remote: application.internshipId.remote,
+      paid: application.internshipId.paid,
+      applicationStatus: application.status,  // Get the actual status from the application
+      applicationDeadline: application.internshipId.applicationDeadline,
+      numPositions: application.internshipId.numPositions,
+      description: application.internshipId.description,
+      requiredSkills: application.internshipId.requiredSkills,
+      coverLetter: application.coverLetter,
+      portfolio: application.portfolio,
+      appliedAt: application.appliedAt
     }));
 
     res.status(200).json({
       status: 'success',
-      results: applications.length,
+      results: formattedApplications.length,
       data: {
-        applications
+        applications: formattedApplications
       }
     });
   } catch (error) {
@@ -302,25 +304,45 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
     next(error);
   }
 });
+
 // Get all applicants for a specific internship (Company)
 exports.GetAllApplicants = catchAsync(async (req, res, next) => {
   const { internshipId } = req.params;
-  const companyId = req.user.id;  
+  const companyId = req.user._id;
 
+  // Find the internship and verify company ownership
   const internship = await Internship.findOne({
     _id: internshipId,
-    companyId,
-  }).populate("applicants", "name email");
+    companyId
+  });
+
   if (!internship) {
-    return next(
-      new AppError("No internship found or unauthorized access", 404)
-    );
+    return next(new AppError("No internship found or unauthorized access", 404));
   }
+
+  // Find all applications for this internship
+  const applications = await Application.find({ internshipId })
+    .populate('studentId', 'name email')
+    .select('_id studentId status appliedAt');  // Include application ID and other relevant fields
+
+  if (!applications || applications.length === 0) {
+    return next(new AppError("No applicants found for this internship", 404));
+  }
+
+  // Format the response to include application ID
+  const formattedApplicants = applications.map(app => ({
+    applicationId: app._id,  // Add application ID
+    studentId: app.studentId._id,
+    name: app.studentId.name,
+    email: app.studentId.email,
+    status: app.status,
+    appliedAt: app.appliedAt
+  }));
 
   res.status(200).json({
     status: "success",
-    results: internship.applicants.length,
-    data: internship.applicants,
+    results: formattedApplicants.length,
+    data: formattedApplicants
   });
 });
 
@@ -353,6 +375,7 @@ exports.GetApplication = catchAsync(async (req, res, next) => {
       applicationDeadline: application.internshipId.applicationDeadline
     },
     application: {
+      id: application._id,
       coverLetter: application.coverLetter,
       portfolio: application.portfolio,
       status: application.status,
@@ -449,5 +472,92 @@ exports.DeleteApplication = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: "success",
     message: "Application deleted successfully"
+  });
+});
+
+exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
+  const { applicationId, status } = req.body;
+  const companyId = req.user._id;
+
+  // Validate status
+  if (!['accepted', 'rejected'].includes(status)) {
+    return next(new AppError("Invalid status. Must be 'accepted' or 'rejected'", 400));
+  }
+
+  // Find the application and populate internship details
+  const application = await Application.findById(applicationId)
+    .populate('studentId', 'name email')
+    .populate('internshipId', 'title CompanyName department startDate endDate');
+
+  if (!application) {
+    return next(new AppError("Application not found", 404));
+  }
+
+  // Verify company owns the internship
+  if (application.internshipId.companyId.toString() !== companyId.toString()) {
+    return next(new AppError("You are not authorized to update this application", 403));
+  }
+
+  // Update application status
+  application.status = status;
+  await application.save();
+
+  // Prepare email content based on status
+  const emailSubject = status === 'accepted' 
+    ? `Congratulations! Your application for ${application.internshipId.title} has been accepted!`
+    : `Update on your application for ${application.internshipId.title}`;
+
+  const emailMessage = status === 'accepted'
+    ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4CAF50;">Congratulations!</h2>
+        <p>Dear ${application.studentId.name},</p>
+        <p>We are pleased to inform you that your application for the ${application.internshipId.title} position at ${application.internshipId.CompanyName} has been accepted!</p>
+        <p>Internship Details:</p>
+        <ul>
+          <li>Position: ${application.internshipId.title}</li>
+          <li>Company: ${application.internshipId.CompanyName}</li>
+          <li>Department: ${application.internshipId.department}</li>
+          <li>Start Date: ${new Date(application.internshipId.startDate).toLocaleDateString()}</li>
+          <li>End Date: ${new Date(application.internshipId.endDate).toLocaleDateString()}</li>
+        </ul>
+        <p>Next Steps:</p>
+        <ol>
+          <li>Please confirm your acceptance by replying to this email</li>
+          <li>We will send you further details about onboarding process</li>
+        </ol>
+        <p>Best regards,<br>${application.internshipId.CompanyName} Team</p>
+      </div>
+    `
+    : `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f44336;">Application Status Update</h2>
+        <p>Dear ${application.studentId.name},</p>
+        <p>Thank you for your interest in the ${application.internshipId.title} position at ${application.internshipId.CompanyName}.</p>
+        <p>After careful consideration, we regret to inform you that we have decided to move forward with other candidates whose qualifications more closely match our current needs.</p>
+        <p>We encourage you to apply for future opportunities that match your skills and experience.</p>
+        <p>Best regards,<br>${application.internshipId.CompanyName} Team</p>
+      </div>
+    `;
+
+  // Send email to student
+  try {
+    await sendEmail({
+      email: application.studentId.email,
+      subject: emailSubject,
+      message: emailMessage,
+      html: emailMessage
+    });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    // Continue with the response even if email fails
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: `Application ${status} successfully`,
+    data: {
+      application
+    }
   });
 });

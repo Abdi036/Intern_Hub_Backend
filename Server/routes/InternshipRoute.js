@@ -1,9 +1,5 @@
 const express = require("express");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
-const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
-
-const router = express.Router();
-
 const {
   PostInternship,
   GetAllMycompanyInternships,
@@ -12,68 +8,39 @@ const {
   DeleteInternship,
   GetInternships,
   ApplyInternship,
+  GetMyApplications,
+  GetApplication,
+  DeleteApplication,
   GetAllApplicants,
   GetApplicant,
-  GetMyApplications,
-  SeeApplicationStatus,
-  DeleteApplication,
-  GetApplication,
+  UpdateApplicationStatus
 } = require("../controllers/internController");
+const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
 
-// COMPANY ROUTES
-router.post("/postInternship", protect, restrictTo("company"), PostInternship);
+const router = express.Router();
 
-router.get(
-  "/allMypostedInterships",
-  protect,
-  restrictTo("company"),
-  GetAllMycompanyInternships
-);
+// Public Routes
+router.get("/", GetInternships);
 
-// STUDENT ROUTES
-router.get("/", protect, restrictTo("student"), GetInternships);
+// Protected Routes
+router.use(protect);
 
-// Get all applications for the logged-in student - This needs to be before parameterized routes
-router.get("/my-applications", protect, restrictTo("student"), GetMyApplications);
+// Company Routes
+router.post("/postInternship", restrictTo("company"), PostInternship);
+router.get("/allMypostedInterships", restrictTo("company"), GetAllMycompanyInternships);
+router.patch("/update-application-status", restrictTo("company"), UpdateApplicationStatus);
 
-// Get specific application details
-router.get("/:internshipId/application", protect, restrictTo("student"), GetApplication);
+// Student Routes
+router.get("/my-applications", restrictTo("student"), GetMyApplications);
+router.post("/:internshipId/apply", restrictTo("student"), pdfUpload.single("coverLetter"), ApplyInternship);
+router.get("/:internshipId/application", restrictTo("student"), GetApplication);
+router.delete("/:internshipId/delete-application", restrictTo("student"), DeleteApplication);
 
-// apply for internship
-router.post(
-  "/:internshipId/apply",
-  protect,
-  restrictTo("student"),
-  pdfUpload.single("coverLetter"),
-  ApplyInternship
-);
-
-// Delete application
-router.delete(
-  "/:internshipId/delete-application",
-  protect,
-  restrictTo("student"),
-  DeleteApplication
-);
-
-router.get(
-  "/:internshipId/applicants",
-  protect,
-  restrictTo("company"),
-  GetAllApplicants
-);
-
-router.get(
-  "/:internshipId/applicants/:applicantId",
-  protect,
-  restrictTo("company"),
-  GetApplicant
-);
-
-router
-  .route("/:id")
-  .get(protect, GetPostedInternship)
-  .patch(protect, restrictTo("company"), EditMyIntership)
-  .delete(protect, restrictTo("company"), DeleteInternship);
+// Company Routes with ID
+router.get("/:id", restrictTo("company"), GetPostedInternship);
+router.patch("/:id", restrictTo("company"), EditMyIntership);
+router.delete("/:id", restrictTo("company"), DeleteInternship);
+router.get("/:internshipId/applicants", restrictTo("company"), GetAllApplicants);
+router.get("/:internshipId/applicants/:applicantId", restrictTo("company"), GetApplicant);
 
 module.exports = router;

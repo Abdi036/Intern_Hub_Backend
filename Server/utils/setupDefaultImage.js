@@ -18,9 +18,7 @@ const setupDefaultImage = () => {
   if (!defaultImage) {
     console.error('Warning: No default user image found in supported formats:', possibleFormats);
     console.error('Please add a default-user.jpg or default-user.png file to the directory');
-  } else {
-    console.log('Default user image found:', defaultImage);
-  }
+  }  
 };
 
 module.exports = setupDefaultImage; 
