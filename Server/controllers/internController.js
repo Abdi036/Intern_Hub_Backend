@@ -185,9 +185,34 @@ exports.DeleteInternship = catchAsync(async (req, res, next) => {
   });
 });
 
-// Students Controller
+
 exports.GetInternships = catchAsync(async (req, res, next) => {
-  const internships = await Internship.find({}).populate("companyId", "name");
+  // Pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = 12; // Fixed at 12 items per page
+  const skip = (page - 1) * limit;
+
+  // Build query for filtering
+  const query = {};
+  
+  // Filter by remote status if provided
+  if (req.query.remote !== undefined) {
+    query.remote = req.query.remote === 'true';
+  }
+  
+  // Filter by paid status if provided
+  if (req.query.paid !== undefined) {
+    query.paid = req.query.paid === 'true';
+  }
+
+  // Execute query with pagination and filters
+  const internships = await Internship.find(query)
+    .skip(skip)
+    .limit(limit)
+    .populate("companyId", "name");
+
+  // Get total count for pagination with filters applied
+  const total = await Internship.countDocuments(query);
 
   if (!internships || internships.length === 0) {
     return next(new AppError("No internships found", 404));
@@ -195,7 +220,13 @@ exports.GetInternships = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    results: internships.length,
+    results: total,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit
+    },
     data: {
       internships,
     },
@@ -323,7 +354,7 @@ exports.GetAllApplicants = catchAsync(async (req, res, next) => {
   // Find all applications for this internship
   const applications = await Application.find({ internshipId })
     .populate('studentId', 'name email')
-    .select('_id studentId status appliedAt');  // Include application ID and other relevant fields
+    .select('_id studentId status appliedAt'); 
 
   if (!applications || applications.length === 0) {
     return next(new AppError("No applicants found for this internship", 404));
@@ -331,7 +362,7 @@ exports.GetAllApplicants = catchAsync(async (req, res, next) => {
 
   // Format the response to include application ID
   const formattedApplicants = applications.map(app => ({
-    applicationId: app._id,  // Add application ID
+    applicationId: app._id,  
     studentId: app.studentId._id,
     name: app.studentId.name,
     email: app.studentId.email,
@@ -531,8 +562,7 @@ exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
         </ol>
         <p>Best regards,<br>${application.internshipId.CompanyName} Team</p>
       </div>
-    `
-    : `
+    `    : `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #f44336;">Application Status Update</h2>
         <p>Dear ${application.studentId.name},</p>
@@ -563,3 +593,4 @@ exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
     }
   });
 });
+
