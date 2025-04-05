@@ -19,11 +19,12 @@ const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
 
 const router = express.Router();
 
-// Public Routes
-router.get("/", GetInternships);
-
 // Protected Routes
 router.use(protect);
+
+// Public Routes
+router.get("/", restrictTo("student","admin"), GetInternships);
+
 
 // Company Routes
 router.post("/postInternship", restrictTo("company"), PostInternship);

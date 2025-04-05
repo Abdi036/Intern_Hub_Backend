@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["student", "company"],
     required: [true, "User must have a role"],
+    enum: ["student", "company", "admin"]
   },
   photo: {
     type: String,
@@ -34,6 +34,8 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+}, {
+  timestamps: true,
 });
 
 // hash or encrypt password before saveing on database

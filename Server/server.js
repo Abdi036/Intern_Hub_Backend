@@ -6,6 +6,7 @@ const setupDefaultImage = require('./utils/setupDefaultImage');
 
 const authRoute = require("./routes/authRoute");
 const InternsRoute = require("./routes/InternshipRoute");
+const adminRoute = require("./routes/adminRoute");
 const errorMiddleware = require("./middleware/errorMiddleware");
 
 dotenv.config();
@@ -27,6 +28,7 @@ mongoose
 // Routes
 app.use("/api/v1/user", authRoute);
 app.use("/api/v1/internships", InternsRoute);
+app.use("/api/v1/admin", adminRoute);
 
 // Global Error Handling Middleware
 app.use(errorMiddleware);

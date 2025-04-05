@@ -27,7 +27,6 @@ const InternshipSchema = new mongoose.Schema({
   },
   requiredSkills: {
     type: [String],
-    required: [true, "Internship needs required skillsets"],
   },
   location: {
     type: String,
