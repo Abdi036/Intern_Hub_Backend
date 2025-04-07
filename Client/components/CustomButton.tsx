@@ -1,5 +1,4 @@
 import { Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
-import React from "react";
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
@@ -18,7 +17,9 @@ export default function CustomButton({
 }: CustomButtonProps) {
   return (
     <TouchableOpacity
-      className={`bg-black px-6 py-3 rounded-full shadow-md w-[328px] min-h-[62px] justify-center items-center ${containerStyles} 
+      className={`bg-black px-6 py-3 rounded-full shadow-md w-[328px] min-h-[62px] justify-center items-center ${
+        isLoading ? "opacity-50" : ""
+      } ${containerStyles} 
       }`}
       disabled={isLoading}
       onPress={handlePress}
@@ -26,7 +27,7 @@ export default function CustomButton({
       <Text
         className={`text-white text-2xl font-semibold text-center ${textStyles}`}
       >
-        {title}
+        {isLoading ? "please wait..." : title}
       </Text>
     </TouchableOpacity>
   );

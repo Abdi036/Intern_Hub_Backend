@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable, Image, Alert } from "react-native";
 import FormField from "@/components/FormField";
 import CustomButton from "@/components/CustomButton";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import { useAuth } from "../context/AuthContext";
+
 
 interface FormData {
   name: string;
@@ -13,7 +15,7 @@ interface FormData {
 }
 
 export default function Signup() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signup, isLoading } = useAuth();
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
@@ -21,8 +23,25 @@ export default function Signup() {
     password: "",
   });
 
-  function submit() {
-    return;
+  // handling the submit form
+  async function submit() {
+    try {
+      if (!form.name || !form.email || !form.password || !form.role) {
+        Alert.alert("Error", "Please fill in all fields");
+        return;
+      }
+
+      await signup({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
+
+      router.replace("/signin");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Something went wrong");
+    }
   }
 
   const roles = ["student", "company"];
@@ -31,6 +50,11 @@ export default function Signup() {
     <SafeAreaView className="h-full">
       <ScrollView>
         <View className="w-full items-center justify-center min-h-[85vh] px-4 my-6">
+          <Image
+            source={require("../../assets/icons/login.png")}
+            className="w-24 h-24 mb-6"
+            resizeMode="contain"
+          />
           <Text className="text-3xl mt-10 font-bold text-black">Sign Up</Text>
 
           <FormField
@@ -39,7 +63,6 @@ export default function Signup() {
             value={form.name}
             handleChangeText={(text) => setForm({ ...form, name: text })}
             keyboardType="default"
-            autoCapitalize="words"
             otherStyles="mt-7"
           />
 
@@ -63,7 +86,7 @@ export default function Signup() {
           />
 
           {/* Account Type */}
-          <Text className="text-base font-semibold text-black mt-5 mb-2 self-start">
+          <Text className="text-base font-semibold text-black mt-5 mb-2 self-start mx-2">
             Account Type
           </Text>
           <View className="flex-row gap-5 text-start">
@@ -89,7 +112,8 @@ export default function Signup() {
             title="Sign Up"
             handlePress={submit}
             containerStyles="mt-7"
-            isLoading={isSubmitting}
+            isLoading={isLoading}
+            disabled={isLoading}
           />
 
           <View className="justify-center pt-5 flex-row gap-2">
