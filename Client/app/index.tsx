@@ -1,13 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollView, Text, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "@/components/CustomButton";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useAuth } from "./context/AuthContext";
 
 export default function App() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+
+  // useEffect(() => {
+  //   // If user is already logged in, redirect to home
+  //   if (user) {
+  //     router.replace("/home");
+  //   }
+  // }, [user]);
+
+  const handleContinue = () => {
+    if (user) {
+      router.push("/home");
+    } else {
+      router.push("/signin");
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -37,7 +54,7 @@ export default function App() {
 
           <CustomButton
             title="Continue to App"
-            handlePress={() => router.push("/signin")}
+            handlePress={handleContinue}
             containerStyles="mt-10"
             isLoading={isLoading}
             textStyles="text-lg tracking-wide"
