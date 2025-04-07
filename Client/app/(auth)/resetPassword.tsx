@@ -6,28 +6,30 @@ import CustomButton from "@/components/CustomButton";
 import { Link, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 
-export default function ForgotPassword() {
-  const { forgotPassword, isLoading } = useAuth();
-  const [email, setEmail] = useState("");
+export default function ResetPassword() {
+  const { resetPassword, isLoading } = useAuth();
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
 
   const handleSubmit = async () => {
     try {
-      if (!email) {
-        Alert.alert("Error", "Please enter your email address");
+      if (!password || !token) {
+        Alert.alert("Error", "Please fill in all fields");
         return;
       }
 
-      await forgotPassword(email);
-      Alert.alert(
-        "Success",
-        "If an account exists with this email, you will receive password reset token.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/resetPassword"),
-          },
-        ]
-      );
+      if (password.length < 6) {
+        Alert.alert("Error", "Password must be at least 6 characters long");
+        return;
+      }
+
+      await resetPassword(token, password);
+      Alert.alert("Success", "Your password has been reset successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/signin"),
+        },
+      ]);
     } catch (err: any) {
       Alert.alert("Error", err.message || "Something went wrong");
     }
@@ -44,26 +46,33 @@ export default function ForgotPassword() {
           />
 
           <Text className="text-3xl font-bold text-black mb-4">
-            Forgot Password
+            Reset Password
           </Text>
 
           <Text className="text-base text-gray-600 text-center mb-6">
-            Enter your email address and we'll send you instructions to reset
-            your password.
+            Please enter the reset token from your email and your new password
+            below.
           </Text>
 
           <FormField
-            title="Email"
-            placeholder="name@example.com"
-            value={email}
-            handleChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
+            title="Reset Token"
+            placeholder="Enter the token from your email"
+            value={token}
+            handleChangeText={setToken}
+            otherStyles="mt-4"
+          />
+
+          <FormField
+            title="New Password"
+            placeholder="Enter your new password"
+            value={password}
+            handleChangeText={setPassword}
+            secureTextEntry
             otherStyles="mt-4"
           />
 
           <CustomButton
-            title="Send Reset Instructions"
+            title="Reset Password"
             handlePress={handleSubmit}
             containerStyles="mt-6"
             isLoading={isLoading}

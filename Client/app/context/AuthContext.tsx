@@ -19,6 +19,8 @@ interface AuthContextType {
   }) => Promise<void>;
   signin: (credentials: { email: string; password: string }) => Promise<void>;
   signout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<any>;
+  resetPassword: (token: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -123,9 +125,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to process forgot password request"
+        );
+      }
+
+      return data;
+    } catch (err: any) {
+      console.error("Forgot password error:", err);
+      setError(
+        err.message || "An error occurred during forgot password request"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (token: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/reset-password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
+
+      // Store the new token and user data
+      await AsyncStorage.setItem("user", JSON.stringify(data));
+      setUser(data);
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      setError(err.message || "An error occurred while resetting password");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, error, signup, signin, signout }}
+      value={{
+        user,
+        isLoading,
+        error,
+        signup,
+        signin,
+        signout,
+        forgotPassword,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

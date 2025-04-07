@@ -11,12 +11,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  // useEffect(() => {
-  //   // If user is already logged in, redirect to home
-  //   if (user) {
-  //     router.replace("/home");
-  //   }
-  // }, [user]);
 
   const handleContinue = () => {
     if (user) {

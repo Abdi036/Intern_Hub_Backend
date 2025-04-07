@@ -134,27 +134,16 @@ exports.ForgotPassword = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   // 3) Send it to user's email
-  const resetURL = `${req.protocol}://${req.get(
-    "host"
-  )}/api/v1/user/reset-password/${resetToken}`;
-
-  const message = `Forgot your password? Submit a PATCH request with your new password to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
+  const message = `Your password reset token is: ${resetToken}.\nIf you didn't forget your password, please ignore this email!`;
 
   const htmlMessage = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Password Reset Request</h2>
       <p>Hello,</p>
       <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
-      <p>To reset your password, click the button below:</p>
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${resetURL}" 
-           style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Reset Password
-        </a>
-      </div>
-      <p>Or copy and paste this link in your browser:</p>
-      <p style="word-break: break-all; color: #666;">${resetURL}</p>
-      <p>This link will expire in 10 minutes.</p>
+      <p>Your password reset token is:</p>
+      <p style="word-break: break-all; color: #666; font-weight: bold;">${resetToken}</p>
+      <p>This token will expire in 10 minutes.</p>
       <p>If you didn't request this password reset, please ignore this email.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #666; font-size: 12px;">This is an automated message, please do not reply to this email.</p>
@@ -166,7 +155,7 @@ exports.ForgotPassword = catchAsync(async (req, res, next) => {
       email: user.email,
       subject: "Your password reset token (valid for 10 min)",
       message,
-      html: htmlMessage
+      html: htmlMessage,
     });
 
     res.status(200).json({
@@ -185,13 +174,19 @@ exports.ForgotPassword = catchAsync(async (req, res, next) => {
       )
     );
   }
-}); 
+});
 
 exports.ResetPassword = catchAsync(async (req, res, next) => {
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(req.params.token)
-    .digest("hex");
+  // Get token from request body instead of URL parameters
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return next(
+      new AppError("Please provide both token and new password", 400)
+    );
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
@@ -201,16 +196,17 @@ exports.ResetPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("Token is invalid or has expired", 400));
   }
-  user.password = req.body.password;
+
+  user.password = password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
 
-  const token = generateToken(res, user._id);
+  const jwtToken = generateToken(res, user._id);
 
   res.status(200).json({
     status: "success",
-    token,
+    token: jwtToken,
   });
 });
 
@@ -277,8 +273,8 @@ exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
   }
 
   // 2) Filtered out unallowed fields names that are not allowed to be updated
-  const filteredBody = filterObj(req.body, "name", "email","photo");
-  
+  const filteredBody = filterObj(req.body, "name", "email", "photo");
+
   // 3) Handle photo upload if present
   if (req.file) {
     const filename = await processImage(req.file, req.user.id);
@@ -311,5 +307,3 @@ exports.DeleteMyAccount = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
-
-
