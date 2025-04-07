@@ -1,37 +1,50 @@
-import React from 'react';
-import { ScrollView, Text, View, Image, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { ScrollView, Text, View, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import CustomButton from "@/components/CustomButton";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 export default function App() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 justify-center items-center px-6 py-10">
-          {/* Logo or Illustration */}
-          {/* <Image
-            source={require('../assets/landing_image.png')} // replace with your asset
-            style={{ width: 200, height: 200 }}
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
+        <View className="flex-1 items-center justify-center min-h-[50vh] px-6 py-10 ">
+          <Image
+            source={require("../assets/icons/icons1.png")}
+            className="w-24 h-24 mt-4 mb-6"
             resizeMode="contain"
-          /> */}
+          />
 
-          {/* Welcome Text */}
-          <Text className="text-3xl font-bold text-center text-gray-800 mt-6">
+          <Text className="text-4xl font-extrabold text-center text-black mb-6">
             Welcome to Internship Hub
           </Text>
 
-          <Text className="text-base text-gray-600 text-center mt-4 px-2">
-            Discover internships tailored to your field and apply effortlessly. Let's get started!
+          {/* Main Illustration */}
+          <Image
+            source={require("../assets/images/landingimage.jpg")}
+            className="w-full h-64 rounded-xl mb-6"
+            resizeMode="cover"
+          />
+
+          <Text className="text-base text-gray-700 text-center px-2 leading-relaxed">
+            Discover internships tailored to your field and apply effortlessly.
+            Your career journey starts here.
           </Text>
 
-          {/* Continue Button */}
-          <Link href="/home" asChild>
-            <TouchableOpacity className="mt-8 bg-green-600 px-6 py-3 rounded-full shadow-md">
-              <Text className="text-white text-base font-semibold">Continue to App</Text>
-            </TouchableOpacity>
-          </Link>
+          <CustomButton
+            title="Continue to App"
+            handlePress={() => router.push("/signin")}
+            containerStyles="mt-10"
+            isLoading={isLoading}
+            textStyles="text-lg tracking-wide"
+          />
         </View>
       </ScrollView>
+      <StatusBar backgroundColor="#161622" style="light" />
     </SafeAreaView>
   );
 }
