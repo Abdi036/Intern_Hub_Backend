@@ -65,9 +65,14 @@ exports.Signin = catchAsync(async (req, res, next) => {
   }
 
   const token = generateToken(res, user._id);
-
+  const { name, role, email: userEmail } = user;
   res.status(200).json({
     status: "success",
+    data: {
+      name,
+      role,
+      email: userEmail,
+    },
     token,
   });
 });

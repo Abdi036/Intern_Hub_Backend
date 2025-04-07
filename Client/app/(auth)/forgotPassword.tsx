@@ -18,16 +18,12 @@ export default function ForgotPassword() {
       }
 
       await forgotPassword(email);
-      Alert.alert(
-        "Success",
-        "If an account exists with this email, you will receive password reset token.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/resetPassword"),
-          },
-        ]
-      );
+      Alert.alert("Success", "you will receive password reset token.", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/resetPassword"),
+        },
+      ]);
     } catch (err: any) {
       Alert.alert("Error", err.message || "Something went wrong");
     }

@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "@/app/context/AuthContext";
 import { router } from "expo-router";

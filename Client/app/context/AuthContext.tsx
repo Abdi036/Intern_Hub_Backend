@@ -26,7 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Use your computer's IP address instead of localhost
-const API_URL = "http://10.240.167.206:3000/api/v1";
+const API_URL = "http://192.168.43.5:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -72,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error(data.message || "Signup failed");
       }
-
       setUser(data);
     } catch (err: any) {
       console.error("Signup error:", err);
@@ -98,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
+      console.log(data);
 
       if (!response.ok) {
         throw new Error(data.message || "Signin failed");
@@ -164,6 +164,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       const response = await fetch(`${API_URL}/user/reset-password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
+
+      // Store the new token and user data
+      await AsyncStorage.setItem("user", JSON.stringify(data));
+      setUser(data);
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      setError(err.message || "An error occurred while resetting password");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const UpdateProfile = async (token: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/update-me`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
