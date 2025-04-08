@@ -21,12 +21,15 @@ interface AuthContextType {
   signout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<any>;
   resetPassword: (token: string, password: string) => Promise<void>;
+  ViewAllInternships: () => Promise<any>;
+  ViewInternship: (id: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Use your computer's IP address instead of localhost
-const API_URL = "http://192.168.43.5:3000/api/v1";
+// const API_URL = "http://192.168.43.5:3000/api/v1";
+const API_URL = "http://10.240.167.206:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -97,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      console.log(data);
 
       if (!response.ok) {
         throw new Error(data.message || "Signin failed");
@@ -189,36 +191,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const UpdateProfile = async (token: string, password: string) => {
+  // View all internships
+  const ViewAllInternships = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch(`${API_URL}/user/update-me`, {
-        method: "PATCH",
+      const response = await fetch(`${API_URL}/internships`, {
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
         },
-        body: JSON.stringify({ token, password }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to reset password");
+        throw new Error(data.message || "Failed to view internships");
       }
-
-      // Store the new token and user data
-      await AsyncStorage.setItem("user", JSON.stringify(data));
-      setUser(data);
-    } catch (err: any) {
-      console.error("Reset password error:", err);
-      setError(err.message || "An error occurred while resetting password");
-      throw err;
-    } finally {
-      setIsLoading(false);
+      return data;
+    } catch (error: any) {
+      console.error("View internship error:", error);
+      setError(error.message || "An error occurred while viewing internships");
+      throw error;
     }
   };
+
+  // View internship by id
+  const ViewInternship = async (id: string) => {
+  try {
+    const response = await fetch(`${API_URL}/internships/${id}`, {
+      headers: {
+        Authorization: `Bearer ${user?.token}`,}
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to view internship");
+      }
+      return data;
+    } catch (error: any) {
+      console.error("View internship error:", error);
+      setError(error.message || "An error occurred while viewing internship");
+  }
+  
+  }
+  
 
   return (
     <AuthContext.Provider
@@ -231,6 +242,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signout,
         forgotPassword,
         resetPassword,
+        ViewAllInternships,
+        ViewInternship,
       }}
     >
       {children}

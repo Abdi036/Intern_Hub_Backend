@@ -1,19 +1,24 @@
 import { Tabs } from "expo-router";
 import { View, Text } from "react-native";
-import { 
-  HomeIcon, 
-  DocumentTextIcon, 
-  BriefcaseIcon, 
-  UserIcon, 
+import {
+  HomeIcon,
+  DocumentTextIcon,
+  UserIcon,
   UsersIcon,
-  IdentificationIcon 
+  IdentificationIcon,
+  PlusIcon,
 } from "react-native-heroicons/outline";
 
-function TabIcon({ Icon, color, name, focused }: { 
-  Icon: React.ComponentType<{ color: string; size?: number }>, 
-  color: string, 
-  name: string, 
-  focused: boolean 
+function TabIcon({
+  Icon,
+  color,
+  name,
+  focused,
+}: {
+  Icon: React.ComponentType<{ color: string; size?: number }>;
+  color: string;
+  name: string;
+  focused: boolean;
 }) {
   return (
     <View className="flex items-center justify-center w-16 pt-3">
@@ -26,25 +31,30 @@ function TabIcon({ Icon, color, name, focused }: {
 }
 
 export default function TabsLayout() {
+  const screenOptions = {
+    tabBarShowLabel: false,
+    tabBarActiveTintColor: "black",
+    tabBarInactiveTintColor: "gray",
+    tabBarStyle: {
+      backgroundColor: "white",
+      borderTopWidth: 1,
+      borderTopColor: "gray",
+    },
+    headerShown: false,
+  };
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: "black",
-        tabBarInactiveTintColor: "gray",
-        tabBarStyle: {
-          backgroundColor: "white",
-          borderTopWidth: 1,
-          borderTopColor: "gray",
-        },
-        headerShown: false,
-      }}
-    >
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen
         name="home"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={HomeIcon} color={color} name="home" focused={focused} />
+            <TabIcon
+              Icon={HomeIcon}
+              color={color}
+              name="home"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -52,15 +62,40 @@ export default function TabsLayout() {
         name="applications"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={DocumentTextIcon} color={color} name="applications" focused={focused} />
+            <TabIcon
+              Icon={DocumentTextIcon}
+              color={color}
+              name="applications"
+              focused={focused}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="internship"
+        name="users"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={BriefcaseIcon} color={color} name="internship" focused={focused} />
+            <TabIcon
+              Icon={IdentificationIcon}
+              color={color}
+              name="users"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="post"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              Icon={PlusIcon}
+              color={color}
+              name="post"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -68,15 +103,25 @@ export default function TabsLayout() {
         name="applicants"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={UsersIcon} color={color} name="applicants" focused={focused} />
+            <TabIcon
+              Icon={UsersIcon}
+              color={color}
+              name="applicants"
+              focused={focused}
+            />
           ),
         }}
       />
       <Tabs.Screen
-        name="users"
+        name="internship"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={IdentificationIcon} color={color} name="users" focused={focused} />
+            <TabIcon
+              Icon={DocumentTextIcon}
+              color={color}
+              name="internship"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -84,7 +129,12 @@ export default function TabsLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon Icon={UserIcon} color={color} name="profile" focused={focused} />
+            <TabIcon
+              Icon={UserIcon}
+              color={color}
+              name="profile"
+              focused={focused}
+            />
           ),
         }}
       />

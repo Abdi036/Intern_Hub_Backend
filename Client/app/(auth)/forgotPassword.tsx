@@ -59,7 +59,7 @@ export default function ForgotPassword() {
           />
 
           <CustomButton
-            title="Send Reset Instructions"
+            title="Send Reset Token"
             handlePress={handleSubmit}
             containerStyles="mt-6"
             isLoading={isLoading}
