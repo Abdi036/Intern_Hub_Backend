@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,28 +18,17 @@ interface Internship {
   remote: boolean;
   paid: boolean;
   position: string;
-  description: string;
   location: string;
-  duration: string;
 }
 
 export default function Home() {
-  const { signout, ViewAllInternships } = useAuth();
+  const { ViewAllInternships } = useAuth();
   const [internships, setInternships] = useState<Internship[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSignOut = async () => {
-    try {
-      await signout();
-      router.replace("/");
-    } catch (error) {
-      console.error("Error during signout:", error);
-    }
-  };
-
   useEffect(() => {
-    const fetchInternships = async () => {
+    async function fetchInternships() {
       try {
         setLoading(true);
         const data = await ViewAllInternships();
@@ -50,14 +39,14 @@ export default function Home() {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchInternships();
   }, []);
 
   const handleInternshipPress = (internship: Internship) => {
     router.push({
-      pathname: "/internship-details",
+      pathname: "../(pages)/internship-details",
       params: { id: internship._id },
     });
   };

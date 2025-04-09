@@ -23,13 +23,16 @@ interface AuthContextType {
   resetPassword: (token: string, password: string) => Promise<void>;
   ViewAllInternships: () => Promise<any>;
   ViewInternship: (id: string) => Promise<any>;
+  ApplyInternship: (
+    internshipId: string,
+    applicationData: FormData
+  ) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Use your computer's IP address instead of localhost
 // const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.167.206:3000/api/v1";
+const API_URL = "http://10.240.140.25:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -38,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load stored session on app start
   useEffect(() => {
-    const loadStoredSession = async () => {
+    async function loadStoredSession() {
       try {
         const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) {
@@ -47,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Error loading stored session:", err);
       }
-    };
+    }
     loadStoredSession();
   }, []);
 
@@ -213,10 +216,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // View internship by id
   const ViewInternship = async (id: string) => {
-  try {
-    const response = await fetch(`${API_URL}/internships/${id}`, {
-      headers: {
-        Authorization: `Bearer ${user?.token}`,}
+    try {
+      const response = await fetch(`${API_URL}/internships/${id}`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
       });
       const data = await response.json();
       if (!response.ok) {
@@ -226,10 +230,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error("View internship error:", error);
       setError(error.message || "An error occurred while viewing internship");
-  }
-  
-  }
-  
+      throw error;
+    }
+  };
+
+  // Apply For internship
+  const ApplyInternship = async (
+    internshipId: string,
+    applicationData: FormData
+  ) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/internships/${internshipId}/apply`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+          body: applicationData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to apply to internship");
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("Apply internship error:", error);
+      throw error;
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -244,6 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         ViewAllInternships,
         ViewInternship,
+        ApplyInternship,
       }}
     >
       {children}
@@ -259,7 +293,6 @@ export function useAuth() {
   return context;
 }
 
-// Add a default export to satisfy Expo Router
 export default function AuthContextProvider({
   children,
 }: {
