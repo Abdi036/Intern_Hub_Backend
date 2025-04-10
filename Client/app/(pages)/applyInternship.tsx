@@ -13,7 +13,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/app/context/AuthContext";
 
 export default function ApplyInternship() {
-  const { ApplyInternship } = useAuth();
+  const { isLoading, ApplyInternship } = useAuth();
   const { internshipId } = useLocalSearchParams();
   const [coverLetter, setCoverLetter] = useState<any>(null);
   const [portfolioLink, setPortfolioLink] = useState("");
@@ -54,7 +54,6 @@ export default function ApplyInternship() {
 
       const response = await ApplyInternship(internshipId as string, formData);
       router.push("/(tabs)/applications");
-      console.log("Application submitted:", response);
     } catch (error) {
       console.error("Apply internship error:", error);
     }
@@ -106,8 +105,11 @@ export default function ApplyInternship() {
           />
 
           <TouchableOpacity
-            className="bg-blue-500 p-4 rounded-lg items-center mt-2"
+            className={`bg-blue-500 p-4 rounded-lg items-center mt-2 ${
+              isLoading ? "opacity-50" : ""
+            }`}
             onPress={handleSubmit}
+            disabled={isLoading}
           >
             <Text className="text-white text-lg font-bold">
               Submit Application

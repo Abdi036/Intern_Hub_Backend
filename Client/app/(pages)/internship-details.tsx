@@ -43,7 +43,7 @@ export default function InternshipDetails() {
         const data = await ViewInternship(id as string);
 
         if (data) {
-          setInternship(data);
+          setInternship(data.internship);
         } else {
           setError("Internship not found");
         }
@@ -94,7 +94,7 @@ export default function InternshipDetails() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 bg-gray-100">
+      <ScrollView className="flex-1 bg-gray-100 ">
         {/* Header Section */}
         <View className="bg-white p-5 mb-2 border-b border-gray-200">
           <Text className="text-2xl font-bold mb-1">

@@ -185,6 +185,7 @@ exports.DeleteInternship = catchAsync(async (req, res, next) => {
   });
 });
 
+// student can view all intership from all companies
 exports.GetInternships = catchAsync(async (req, res, next) => {
   // Pagination parameters
   const page = parseInt(req.query.page) || 1;

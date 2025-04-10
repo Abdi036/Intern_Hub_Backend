@@ -10,27 +10,42 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/app/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import moment from "moment";
+import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+
+interface Application {
+  companyName: string;
+  appliedAt: string;
+  applicationStatus: string;
+  internshipId: string;
+}
 
 export default function Application() {
-  const { user, ViewApplications } = useAuth();
-  const [applications, setApplications] = useState([]);
+  const { ViewApplications, error } = useAuth();
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchApplications = async () => {
     try {
       const data = await ViewApplications();
-      setApplications(data);
-      console.log(data);
-    } catch (error) {
-      console.error("Failed to fetch applications:", error);
+      setApplications(data.data.applications || []);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
+  function handleApplicationClick(internshipId: string) {
+    router.push({
+      pathname: "../(pages)/application-details",
+      params: { id: internshipId },
+    });
+  }
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchApplications();
+    }, [])
+  );
 
   if (loading) {
     return (
@@ -47,66 +62,31 @@ export default function Application() {
         <Text className="text-2xl font-bold mb-4 text-center">
           My Applications
         </Text>
-
         {applications.length === 0 ? (
-          <View className="bg-white p-6 rounded-lg shadow-md">
-            <Text className="text-center text-gray-500">
-              You haven't applied to any internships yet.
-            </Text>
-          </View>
+          <SafeAreaView className="flex-1 justify-center items-center h-[75vh]">
+            <Text className="text-center text-gray-500">{error}</Text>
+          </SafeAreaView>
         ) : (
-          applications.map((app: any, index: number) => (
-            <View
+          applications.map((application, index) => (
+            <TouchableOpacity
               key={index}
-              className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200"
+              onPress={() => handleApplicationClick(application.internshipId)}
+              className="bg-white p-4 mb-4 rounded-lg shadow"
             >
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-lg font-semibold text-gray-800">
-                  {app.internship?.title || "Untitled Internship"}
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-lg font-semibold">
+                  {application.companyName || "Company Name"}
                 </Text>
-                <View
-                  className={`px-3 py-1 rounded-full ${
-                    app.status === "pending"
-                      ? "bg-yellow-100"
-                      : app.status === "accepted"
-                      ? "bg-green-100"
-                      : "bg-red-100"
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      app.status === "pending"
-                        ? "text-yellow-600"
-                        : app.status === "accepted"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                  </Text>
-                </View>
+                <Ionicons name="chevron-forward" size={24} color="#2563EB" />
               </View>
-
-              <Text className="text-gray-500 mb-1">
-                Submitted on:{" "}
-                {moment(app.createdAt).format("MMM DD, YYYY [at] hh:mm A")}
+              <Text className="text-gray-600">
+                Applied on:{" "}
+                {moment(application.appliedAt).format("MMMM Do YYYY")}
               </Text>
-
-              {app.portfolio && (
-                <Text className="text-blue-500 underline mb-1">
-                  Portfolio: {app.portfolio}
-                </Text>
-              )}
-
-              <TouchableOpacity className="mt-2 flex-row items-center">
-                <Ionicons
-                  name="document-text-outline"
-                  size={20}
-                  color="#4B5563"
-                />
-                <Text className="ml-2 text-gray-700">View Cover Letter</Text>
-              </TouchableOpacity>
-            </View>
+              <Text className="text-gray-600">
+                Status: {application.applicationStatus}
+              </Text>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>

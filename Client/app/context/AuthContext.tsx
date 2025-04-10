@@ -21,19 +21,20 @@ interface AuthContextType {
   signout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<any>;
   resetPassword: (token: string, password: string) => Promise<void>;
-  ViewAllInternships: () => Promise<any>;
+  ViewAllInternships: (page?: number) => Promise<any>;
   ViewInternship: (id: string) => Promise<any>;
   ApplyInternship: (
     internshipId: string,
     applicationData: FormData
   ) => Promise<any>;
   ViewApplications: () => Promise<any>;
+  ApplicationDetail: (id: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.140.25:3000/api/v1";
+const API_URL = "http://10.240.167.82:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -196,21 +197,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // View all internships
-  const ViewAllInternships = async () => {
+  const ViewAllInternships = async (page = 1) => {
     try {
-      const response = await fetch(`${API_URL}/internships`, {
+      const response = await fetch(`${API_URL}/internships?page=${page}`, {
         headers: {
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
       const data = await response.json();
+
       if (!response.ok) {
         throw new Error(data.message || "Failed to view internships");
       }
+
       return data;
     } catch (error: any) {
       console.error("View internship error:", error);
-      setError(error.message || "An error occurred while viewing internships");
       throw error;
     }
   };
@@ -241,6 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applicationData: FormData
   ) => {
     try {
+      setIsLoading(true);
       const response = await fetch(
         `${API_URL}/internships/${internshipId}/apply`,
         {
@@ -262,21 +266,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error("Apply internship error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // student can view their applications
   const ViewApplications = async () => {
     try {
       const response = await fetch(`${API_URL}/internships/my-applications`, {
+        method: "GET",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
       const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Failed to view applications");
+      }
+
+      return data.applications || data;
+    } catch (error) {
+      console.error("View applications error:", error);
+      throw error;
+    }
+  };
+
+  // student can view specific application detail
+  const ApplicationDetail = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/internships/${id}/application`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      const data = await response.json();
+
       if (!response.ok) {
         throw new Error(data.message || "Failed to view applications");
       }
-      return data;
+
+      return data.applications || data;
     } catch (error) {
       console.error("View applications error:", error);
       throw error;
@@ -298,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ViewInternship,
         ApplyInternship,
         ViewApplications,
+        ApplicationDetail,
       }}
     >
       {children}
