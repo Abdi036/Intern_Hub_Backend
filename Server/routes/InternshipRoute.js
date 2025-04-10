@@ -25,7 +25,6 @@ router.use(protect);
 
 // Public Routes
 router.get("/", restrictTo("student", "admin"), GetInternships);
-router.get("/:id", restrictTo("student", "admin"), GetInternshipById);
 
 // Company Routes
 router.post("/postInternship", restrictTo("company"), PostInternship);
@@ -34,6 +33,7 @@ router.get(
   restrictTo("company"),
   GetAllMycompanyInternships
 );
+
 router.patch(
   "/update-application-status",
   restrictTo("company"),
@@ -42,6 +42,8 @@ router.patch(
 
 // Student Routes
 router.get("/my-applications", restrictTo("student"), GetMyApplications);
+router.get("/:id", restrictTo("student", "admin"), GetInternshipById);
+
 router.post(
   "/:internshipId/apply",
   restrictTo("student"),

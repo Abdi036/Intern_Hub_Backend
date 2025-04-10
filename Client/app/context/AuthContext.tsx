@@ -27,6 +27,7 @@ interface AuthContextType {
     internshipId: string,
     applicationData: FormData
   ) => Promise<any>;
+  ViewApplications: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -264,6 +265,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const ViewApplications = async () => {
+    try {
+      const response = await fetch(`${API_URL}/internships/my-applications`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to view applications");
+      }
+      return data;
+    } catch (error) {
+      console.error("View applications error:", error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -278,6 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ViewAllInternships,
         ViewInternship,
         ApplyInternship,
+        ViewApplications,
       }}
     >
       {children}

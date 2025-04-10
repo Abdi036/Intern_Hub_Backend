@@ -188,7 +188,7 @@ exports.DeleteInternship = catchAsync(async (req, res, next) => {
 exports.GetInternships = catchAsync(async (req, res, next) => {
   // Pagination parameters
   const page = parseInt(req.query.page) || 1;
-  const limit = 12; // Fixed at 12 items per page
+  const limit = 12;
   const skip = (page - 1) * limit;
 
   // Build query for filtering
@@ -237,7 +237,10 @@ exports.GetInternshipById = catchAsync(async (req, res, next) => {
   if (!internship) {
     return next(new AppError("No internship found with that ID", 404));
   }
-  res.status(200).json(internship);
+  res.status(200).json({
+    status: "Success",
+    internship,
+  });
 });
 
 exports.ApplyInternship = catchAsync(async (req, res, next) => {
@@ -305,6 +308,7 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
   });
 });
 
+// Student Can Get all Their Application
 exports.GetMyApplications = catchAsync(async (req, res, next) => {
   try {
     const studentId = req.user._id;
@@ -356,49 +360,6 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
   }
 });
 
-// Get all applicants for a specific internship (Company)
-exports.GetAllApplicants = catchAsync(async (req, res, next) => {
-  const { internshipId } = req.params;
-  const companyId = req.user._id;
-
-  // Find the internship and verify company ownership
-  const internship = await Internship.findOne({
-    _id: internshipId,
-    companyId,
-  });
-
-  if (!internship) {
-    return next(
-      new AppError("No internship found or unauthorized access", 404)
-    );
-  }
-
-  // Find all applications for this internship
-  const applications = await Application.find({ internshipId })
-    .populate("studentId", "name email")
-    .select("_id studentId status appliedAt");
-
-  if (!applications || applications.length === 0) {
-    return next(new AppError("No applicants found for this internship", 404));
-  }
-
-  // Format the response to include application ID
-  const formattedApplicants = applications.map((app) => ({
-    applicationId: app._id,
-    studentId: app.studentId._id,
-    name: app.studentId.name,
-    email: app.studentId.email,
-    status: app.status,
-    appliedAt: app.appliedAt,
-  }));
-
-  res.status(200).json({
-    status: "success",
-    results: formattedApplicants.length,
-    data: formattedApplicants,
-  });
-});
-
 exports.GetApplication = catchAsync(async (req, res, next) => {
   const { internshipId } = req.params;
   const studentId = req.user._id;
@@ -442,6 +403,49 @@ exports.GetApplication = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: applicationDetails,
+  });
+});
+
+// Get all applicants for a specific internship (Company)
+exports.GetAllApplicants = catchAsync(async (req, res, next) => {
+  const { internshipId } = req.params;
+  const companyId = req.user._id;
+
+  // Find the internship and verify company ownership
+  const internship = await Internship.findOne({
+    _id: internshipId,
+    companyId,
+  });
+
+  if (!internship) {
+    return next(
+      new AppError("No internship found or unauthorized access", 404)
+    );
+  }
+
+  // Find all applications for this internship
+  const applications = await Application.find({ internshipId })
+    .populate("studentId", "name email")
+    .select("_id studentId status appliedAt");
+
+  if (!applications || applications.length === 0) {
+    return next(new AppError("No applicants found for this internship", 404));
+  }
+
+  // Format the response to include application ID
+  const formattedApplicants = applications.map((app) => ({
+    applicationId: app._id,
+    studentId: app.studentId._id,
+    name: app.studentId.name,
+    email: app.studentId.email,
+    status: app.status,
+    appliedAt: app.appliedAt,
+  }));
+
+  res.status(200).json({
+    status: "success",
+    results: formattedApplicants.length,
+    data: formattedApplicants,
   });
 });
 
