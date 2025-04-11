@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -64,7 +64,9 @@ export default function Application() {
         </Text>
         {applications.length === 0 ? (
           <SafeAreaView className="flex-1 justify-center items-center h-[75vh]">
-            <Text className="text-center text-gray-500">{error}</Text>
+            <Text className="text-center text-gray-500">
+              No Application Found!
+            </Text>
           </SafeAreaView>
         ) : (
           applications.map((application, index) => (

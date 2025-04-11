@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import moment from "moment";
 import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ApplicationDetails() {
-  const { ApplicationDetail } = useAuth();
+  const { ApplicationDetail, DeleteApplication } = useAuth();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const { id } = useLocalSearchParams();
@@ -24,11 +25,11 @@ export default function ApplicationDetails() {
     };
 
     if (id) {
-      fetchApplicationDetails();  
+      fetchApplicationDetails();
     } else {
-      setLoading(false);  
+      setLoading(false);
     }
-  }, [id]);  
+  }, [id]);
 
   if (loading) {
     return (
@@ -45,6 +46,15 @@ export default function ApplicationDetails() {
       </View>
     );
   }
+
+  const handleDeleteApplication = async () => {
+    try {
+      await DeleteApplication(applicationId);
+      router.back();
+    } catch (error) {
+      console.error("Error deleting application:", error);
+    }
+  };
 
   // Destructuring application details
   const { internship, application: appDetails } = application;
@@ -72,9 +82,8 @@ export default function ApplicationDetails() {
   } = appDetails;
 
   return (
-    <View className="flex-1 bg-gray-50 p-4">
+    <SafeAreaView className="flex-1 bg-gray-50 p-4">
       <Text className="text-2xl font-bold mb-4">{title}</Text>
-
       <Text className="text-lg font-semibold text-gray-800 mb-2">
         {companyName}
       </Text>
@@ -136,12 +145,22 @@ export default function ApplicationDetails() {
         <Text className="text-gray-500">No cover letter provided.</Text>
       )}
 
-      <TouchableOpacity
-        className="bg-gray-300 p-4 rounded-lg mx-5 mb-5 items-center mt-10"
-        onPress={() => router.back()}
-      >
-        <Text className="text-gray-800 text-base font-medium">Go Back</Text>
-      </TouchableOpacity>
-    </View>
+      <View>
+        <TouchableOpacity
+          className="bg-red-500 p-4 rounded-lg mx-5 mb-5 items-center mt-7"
+          onPress={() => handleDeleteApplication()}
+        >
+          <Text className="text-gray-800 text-base font-medium">
+            Delete Application
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="bg-gray-300 p-4 rounded-lg mx-5 mb-5 items-center mt-2"
+          onPress={() => router.back()}
+        >
+          <Text className="text-gray-800 text-base font-medium">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }

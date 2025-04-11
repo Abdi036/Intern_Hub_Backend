@@ -29,12 +29,15 @@ interface AuthContextType {
   ) => Promise<any>;
   ViewApplications: () => Promise<any>;
   ApplicationDetail: (id: string) => Promise<any>;
+  DeleteApplication: (id: string) => Promise<void>;
+  ViewUsers: () => Promise<any>;
+  DeleteUsers: (userId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.167.82:3000/api/v1";
+const API_URL = "http://10.240.140.25:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -294,7 +297,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
   };
-
   // student can view specific application detail
   const ApplicationDetail = async (id: string) => {
     try {
@@ -319,6 +321,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Student can delete their application
+  const DeleteApplication = async (id: string) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/internships/${id}/delete-application`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
+    } catch (error: any) {
+      console.error("Delete application error:", error);
+      setError(error.message || "An error occurred while deleting application");
+      throw error;
+    }
+  };
+  const ViewUsers = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/admin/users`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error("View users error:", error);
+      setError(error.message || "An error occurred while viewing users");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const DeleteUsers = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+    } catch (error: any) {
+      setError(error.message || "An error occurred while deleting user");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+    return true;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -335,6 +398,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ApplyInternship,
         ViewApplications,
         ApplicationDetail,
+        DeleteApplication,
+        ViewUsers,
+        DeleteUsers,
       }}
     >
       {children}
