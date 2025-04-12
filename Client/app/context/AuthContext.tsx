@@ -21,6 +21,7 @@ interface AuthContextType {
   signout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<any>;
   resetPassword: (token: string, password: string) => Promise<void>;
+  updateProfile: (formData: FormData) => Promise<void>;
   ViewAllInternships: (page?: number) => Promise<any>;
   ViewInternship: (id: string) => Promise<any>;
   ApplyInternship: (
@@ -37,7 +38,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.140.25:3000/api/v1";
+const API_URL = "http://10.240.163.41:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -194,6 +195,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Reset password error:", err);
       setError(err.message || "An error occurred while resetting password");
       throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateProfile = async (formData: FormData) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/update-me`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update profile");
+      }
+
+      // Save updated user data
+      await AsyncStorage.setItem("user", JSON.stringify(data));
+      setUser(data);
+    } catch (error: any) {
+      setError(error.message || "An error occurred while updating profile");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -393,6 +424,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signout,
         forgotPassword,
         resetPassword,
+        updateProfile,
         ViewAllInternships,
         ViewInternship,
         ApplyInternship,

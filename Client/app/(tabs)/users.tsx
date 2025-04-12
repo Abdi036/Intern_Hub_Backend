@@ -20,6 +20,7 @@ interface User {
   role: string;
 }
 
+const URL = "http://10.240.163.41:3000";
 export default function Users() {
   const { error, isLoading, ViewUsers, DeleteUsers } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -77,7 +78,7 @@ export default function Users() {
             >
               <Image
                 source={{
-                  uri: `http://10.240.140.25:3000/images/users/${item.photo}`,
+                  uri: `${URL}/images/users/${item.photo}`,
                 }}
                 className="w-12 h-12 rounded-full mr-4 border border-slate-500"
               />
