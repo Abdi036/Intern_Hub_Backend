@@ -40,8 +40,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.163.41:3000/api/v1";
+const API_URL = "http://192.168.43.5:3000/api/v1";
+// const API_URL = "http://10.240.163.41:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);

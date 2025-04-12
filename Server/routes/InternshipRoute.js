@@ -58,7 +58,7 @@ router.delete(
 );
 
 // Company Routes with ID
-router.get("/:id", restrictTo("company"), GetPostedInternship);
+router.get("/posted/:id", restrictTo("company"), GetPostedInternship);
 router.patch("/:id", restrictTo("company"), EditMyIntership);
 router.delete("/:id", restrictTo("company"), DeleteInternship);
 router.get(
