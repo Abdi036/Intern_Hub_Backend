@@ -5,10 +5,11 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface Internship {
   _id: string;
@@ -30,9 +31,11 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  useEffect(() => {
-    fetchInternships(page);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchInternships(page);
+    }, [])
+  );
 
   const fetchInternships = async (pageToFetch: number) => {
     try {

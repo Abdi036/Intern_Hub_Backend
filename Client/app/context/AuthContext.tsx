@@ -31,6 +31,7 @@ interface AuthContextType {
     applicationData: FormData
   ) => Promise<any>;
   ViewApplications: () => Promise<any>;
+  DeleteInternship: (id: string) => Promise<any>;
   ApplicationDetail: (id: string) => Promise<any>;
   DeleteApplication: (id: string) => Promise<void>;
   ViewUsers: () => Promise<any>;
@@ -335,6 +336,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const DeleteInternship = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/admin/internships/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete internship");
+      }
+      return data;
+    } catch (error: any) {
+      setError(error.message || "An error occurred while deleting internship");
+      throw error;
+    }
+  };
   // Apply For internship
   const ApplyInternship = async (
     internshipId: string,
@@ -491,6 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         UpdatePassword,
         deleteProfile,
         ViewAllInternships,
+        DeleteInternship,
         ViewInternship,
         ApplyInternship,
         ViewApplications,

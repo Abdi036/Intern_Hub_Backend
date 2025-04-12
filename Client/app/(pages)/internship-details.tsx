@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { TrashIcon } from "react-native-heroicons/outline";
 
 interface Internship {
   _id: string;
@@ -31,10 +32,12 @@ interface Internship {
 
 export default function InternshipDetails() {
   const { id } = useLocalSearchParams();
-  const { ViewInternship } = useAuth();
+  const { ViewInternship, DeleteInternship, user } = useAuth();
   const [internship, setInternship] = useState<Internship | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = user?.data?.role?.toLowerCase() === "admin";
 
   useEffect(() => {
     const fetchInternshipDetails = async () => {
@@ -58,11 +61,24 @@ export default function InternshipDetails() {
     fetchInternshipDetails();
   }, [id]);
 
+  const hasApplied = internship?.applicants?.some(
+    (applicant: any) => applicant?.userId === user?.data?._id
+  );
+
   const handleApply = () => {
     router.push({
       pathname: "../(pages)/applyInternship",
       params: { internshipId: id },
     });
+  };
+
+  const handleDelete = async () => {
+    try {
+      await DeleteInternship(id as string);
+      router.back();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete internship");
+    }
   };
 
   if (loading) {
@@ -95,23 +111,33 @@ export default function InternshipDetails() {
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1 bg-gray-100 ">
-        {/* Header Section */}
-        <View className="bg-white p-5 mb-2 border-b border-gray-200">
-          <Text className="text-2xl font-bold mb-1">
-            {internship.CompanyName}
-          </Text>
-          <Text className="text-xl text-gray-800 mb-1">{internship.title}</Text>
-          <Text className="text-base text-gray-600 mb-1">
-            Department: {internship.department}
-          </Text>
-          <Text className="text-base text-blue-500 mb-1">
-            {internship.remote ? "Remote Position" : "On-site Position"}
-          </Text>
-          <Text className="text-base text-green-600">
-            {internship.paid ? "Paid Internship" : "Unpaid Internship"}
-          </Text>
+        <View className="flex bg-white justify-between relative">
+          <View className="bg-white p-5 mb-2 border-b border-gray-200">
+            <Text className="text-2xl font-bold mb-1">
+              {internship.CompanyName}
+            </Text>
+            <Text className="text-xl text-gray-800 mb-1">
+              {internship.title}
+            </Text>
+            <Text className="text-base text-gray-600 mb-1">
+              Department: {internship.department}
+            </Text>
+            <Text className="text-base text-blue-500 mb-1">
+              {internship.remote ? "Remote Position" : "On-site Position"}
+            </Text>
+            <Text className="text-base text-green-600">
+              {internship.paid ? "Paid Internship" : "Unpaid Internship"}
+            </Text>
+            {isAdmin && (
+              <TouchableOpacity
+                className="absolute top-6 right-[30px]"
+                onPress={() => handleDelete()}
+              >
+                <TrashIcon size={30} color="red" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-
         {/* Description Section */}
         <View className="bg-white p-5 mb-2">
           <Text className="text-lg font-bold mb-2 text-gray-800">
@@ -180,12 +206,16 @@ export default function InternshipDetails() {
           </View>
         )}
 
-        {/* Buttons */}
         <TouchableOpacity
-          className="bg-blue-500 p-4 rounded-lg mx-5 my-5 items-center"
-          onPress={handleApply}
+          className={`p-4 rounded-lg mx-5 my-5 items-center ${
+            hasApplied ? "bg-gray-400" : "bg-blue-500"
+          }`}
+          onPress={!hasApplied ? handleApply : undefined}
+          disabled={hasApplied}
         >
-          <Text className="text-white text-lg font-bold">Apply Now</Text>
+          <Text className="text-white text-lg font-bold">
+            {hasApplied ? "Applied" : "Apply Now"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity

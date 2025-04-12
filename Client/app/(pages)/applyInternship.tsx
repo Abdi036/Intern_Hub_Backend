@@ -105,14 +105,18 @@ export default function ApplyInternship() {
           />
 
           <TouchableOpacity
-            className={`bg-blue-500 p-4 rounded-lg items-center mt-2 ${
-              isLoading ? "opacity-50" : ""
+            className={`p-4 rounded-lg items-center mt-2 ${
+              isLoading ? "bg-gray-400" : "bg-blue-500"
             }`}
             onPress={handleSubmit}
             disabled={isLoading}
           >
-            <Text className="text-white text-lg font-bold">
-              Submit Application
+            <Text
+              className={`text-lg font-bold ${
+                isLoading ? "text-gray-200" : "text-white"
+              }`}
+            >
+              {isLoading ? "Submitting..." : "Submit Application"}
             </Text>
           </TouchableOpacity>
         </View>
