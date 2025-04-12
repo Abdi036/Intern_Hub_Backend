@@ -36,6 +36,7 @@ interface AuthContextType {
   DeleteApplication: (id: string) => Promise<void>;
   ViewUsers: () => Promise<any>;
   DeleteUsers: (userId: string) => Promise<boolean>;
+  GetAllMypostedinterships: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -495,6 +496,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  // Note: I have not implemented the Postinternship Api integration in this file.
+
+  const GetAllMypostedinterships = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/internships/allMypostedInterships`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to view internships");
+      }
+      return data;
+    } catch (error: any) {
+      console.error("View internship error:", error);
+      setError(error.message || "An error occurred while viewing internship");
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -518,6 +544,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         DeleteApplication,
         ViewUsers,
         DeleteUsers,
+        GetAllMypostedinterships,
       }}
     >
       {children}
