@@ -1,4 +1,11 @@
-import { Text, TouchableOpacity, Image, TextInput, Alert } from "react-native";
+import {
+  Text,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Alert,
+  View,
+} from "react-native";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
@@ -6,13 +13,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 
 export default function Profile() {
-  const { signout, user, updateProfile } = useAuth();
+  const {
+    signout,
+    user,
+    updateProfile,
+    UpdatePassword,
+    deleteProfile,
+    error,
+    isLoading,
+  } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [name, setName] = useState(user?.data?.name || "");
   const [email, setEmail] = useState(user?.data?.email || "");
   const [image, setImage] = useState<string | null>(null);
-
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [password, setPassword] = useState("");
   const [isChanged, setIsChanged] = useState(false);
 
   const profilePhoto =
@@ -42,7 +58,6 @@ export default function Profile() {
 
       if (image) {
         const filename = image?.split("/").pop() ?? "default.jpg";
-
         const match = /\.(\w+)$/.exec(filename ?? "");
         const ext = match?.[1];
         const type = match ? `image/${ext}` : `image`;
@@ -69,8 +84,26 @@ export default function Profile() {
     try {
       await signout();
       router.replace("/");
-    } catch (error) {
+    } catch (err) {
       console.error("Error during signout:", error);
+    }
+  };
+
+  // Update Password Function
+  const handleUpdatePassword = async () => {
+    try {
+      if (currentPassword && password) {
+        await UpdatePassword(currentPassword, password);
+        Alert.alert("Success", "Password updated successfully!");
+        handleSignOut();
+        setCurrentPassword("");
+        setPassword("");
+      } else {
+        Alert.alert("Error", "Please fill in all fields.");
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || "An unknown error occurred.";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -132,6 +165,71 @@ export default function Profile() {
       <TouchableOpacity onPress={handleSignOut}>
         <Text className="text-red-500 text-base">Sign Out</Text>
       </TouchableOpacity>
+
+      <View className="mt-6">
+        <Text className="font-semibold mb-2">Update Password</Text>
+        <TextInput
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          placeholder="Current Password"
+          className="mb-2 p-2 border-b border-gray-400 w-64"
+        />
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="New Password"
+          className="mb-2 p-2 border-b border-gray-400 w-64"
+        />
+        <TouchableOpacity
+          className={`px-4 py-2 rounded-full ${
+            isLoading ? "bg-gray-400" : "bg-blue-500"
+          }`}
+          disabled={isLoading}
+          onPress={handleUpdatePassword}
+        >
+          <Text className="text-white font-semibold">
+            {isLoading ? "Updating..." : "Update Password"}{" "}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View className="mt-6 w-full items-center">
+        <Text>Danger Zone</Text>
+        <TouchableOpacity
+          className="bg-red-500 px-4 py-2 rounded-full mb-4 mt-2"
+          onPress={() =>
+            Alert.alert(
+              "Delete Account",
+              "Are you sure you want to delete your account?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  onPress: async () => {
+                    try {
+                      await deleteProfile();
+                      Alert.alert(
+                        "Account Deleted",
+                        "Your account has been deleted."
+                      );
+                      handleSignOut();
+                    } catch (error) {
+                      console.error("Error deleting account:", error);
+                      Alert.alert(
+                        "Error",
+                        "Something went wrong while deleting account."
+                      );
+                    }
+                  },
+                  style: "destructive",
+                },
+              ]
+            )
+          }
+        >
+          <Text className="text-white font-semibold">Delete Account</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }

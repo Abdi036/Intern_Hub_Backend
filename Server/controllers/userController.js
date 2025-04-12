@@ -311,6 +311,6 @@ exports.DeleteMyAccount = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: "success",
-    data: null,
+    message: "Internship deleted successfully",
   });
 });

@@ -22,6 +22,8 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<any>;
   resetPassword: (token: string, password: string) => Promise<void>;
   updateProfile: (formData: FormData) => Promise<void>;
+  UpdatePassword: (currentPassword: string, password: string) => Promise<void>;
+  deleteProfile: () => Promise<void>;
   ViewAllInternships: (page?: number) => Promise<any>;
   ViewInternship: (id: string) => Promise<any>;
   ApplyInternship: (
@@ -230,6 +232,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const UpdatePassword = async (currentPassword: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/update-password`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentPassword, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update password");
+      }
+
+      return data;
+    } catch (error: any) {
+      setError(error.message || "An error occurred while updating password");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteProfile = async () => {
+    try {
+      setError(null);
+
+      const response = await fetch(`${API_URL}/user/delete-me`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      if (response.status === 204) {
+        return { message: "Profile deleted successfully." };
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete profile");
+      }
+
+      // Clear user data from AsyncStorage
+      await AsyncStorage.removeItem("user");
+      setUser(null);
+
+      return data;
+    } catch (error: any) {
+      setError(error.message || "An error occurred while deleting profile");
+      throw error;
+    }
+  };
+
   // View all internships
   const ViewAllInternships = async (page = 1) => {
     try {
@@ -425,6 +488,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         forgotPassword,
         resetPassword,
         updateProfile,
+        UpdatePassword,
+        deleteProfile,
         ViewAllInternships,
         ViewInternship,
         ApplyInternship,
