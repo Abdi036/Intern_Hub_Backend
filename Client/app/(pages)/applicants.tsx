@@ -22,7 +22,7 @@ interface Applicant {
   appliedAt: string;
 }
 
-const URL = "http://10.240.163.41:3000";
+const URL = "http://10.240.140.29:3000";
 
 export default function Applicants() {
   const { GetAllApplicants } = useAuth();
@@ -78,10 +78,13 @@ export default function Applicants() {
     );
   }
 
-  async function handleApplicantDetail(studentId: string) {
+  async function handleApplicantDetail(
+    studentId: string,
+    applicationId: string
+  ) {
     router.push({
       pathname: "/(pages)/applicants-detail",
-      params: { studentId, id },
+      params: { studentId, id, applicationId },
     });
   }
 
@@ -99,7 +102,9 @@ export default function Applicants() {
         keyExtractor={(item) => item.applicationId}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => handleApplicantDetail(item.studentId)}
+            onPress={() =>
+              handleApplicantDetail(item.studentId, item.applicationId)
+            }
             className="bg-white p-4 mb-2 mx-4 rounded-lg shadow-sm"
           >
             <View className="flex-row items-center mb-3">
@@ -146,13 +151,6 @@ export default function Applicants() {
             <Text className="text-gray-500 mb-4">
               {applicants.length}{" "}
               {applicants.length === 1 ? "applicant" : "applicants"} found
-            </Text>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View className="flex justify-center items-center mt-10 px-4">
-            <Text className="text-gray-500 text-center">
-              No applicants found for this internship.
             </Text>
           </View>
         )}

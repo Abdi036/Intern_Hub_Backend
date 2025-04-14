@@ -42,6 +42,10 @@ interface AuthContextType {
   DeleteMyPostedInternship: (id: string) => Promise<any>;
   GetAllApplicants: (id: string) => Promise<any>;
   GetApplicantDetail: (id: string, studentId: string) => Promise<any>;
+  UpdateApplicationStatus: (
+    applicationId: string,
+    status: string
+  ) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -672,6 +676,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
+
+  const UpdateApplicationStatus = async (
+    applicationId: string,
+    status: string
+  ) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(
+        `${API_URL}/internships/update-application-status`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            applicationId,
+            status,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err: any) {
+      setError(
+        err.message || "An error occurred while updating application status"
+      );
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -701,6 +747,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         DeleteMyPostedInternship,
         GetAllApplicants,
         GetApplicantDetail,
+        UpdateApplicationStatus,
       }}
     >
       {children}

@@ -37,12 +37,14 @@ export default function OwninternshipDetails() {
     ViewMyPostedInternship,
     DeleteMyPostedInternship,
     EditMyPostedInternship,
+    GetAllApplicants,
   } = useAuth();
 
   const [internship, setInternship] = useState<Internship | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [isApplicantEmpty, setIsApplicantEmpty] = useState(false);
   const [editedInternship, setEditedInternship] = useState<Partial<Internship>>(
     {}
   );
@@ -82,6 +84,8 @@ export default function OwninternshipDetails() {
   }
 
   async function handleViewApplicants() {
+    const applicants = await GetAllApplicants(id as string);
+    setIsApplicantEmpty(applicants.length === 0);
     router.push({
       pathname: "../(pages)/applicants",
       params: { id: internship?._id },
@@ -298,10 +302,11 @@ export default function OwninternshipDetails() {
 
         <TouchableOpacity
           className="bg-gray-300 p-4 rounded-lg mx-5 mb-5 items-center"
+          disabled={isApplicantEmpty}
           onPress={() => handleViewApplicants()}
         >
           <Text className="text-gray-800 text-base font-medium">
-            View Applicants
+            {isApplicantEmpty ? "No applicants yet" : "View Applicants"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

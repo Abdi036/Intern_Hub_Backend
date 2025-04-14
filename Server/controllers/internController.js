@@ -327,26 +327,28 @@ exports.GetMyApplications = catchAsync(async (req, res, next) => {
     }
 
     // Format the response to include relevant information
-    const formattedApplications = applications.map((application) => ({
-      applicationId: application._id,
-      internshipId: application.internshipId._id,
-      title: application.internshipId.title,
-      companyName: application.internshipId.CompanyName,
-      department: application.internshipId.department,
-      startDate: application.internshipId.startDate,
-      endDate: application.internshipId.endDate,
-      location: application.internshipId.location,
-      remote: application.internshipId.remote,
-      paid: application.internshipId.paid,
-      applicationStatus: application.status, // Get the actual status from the application
-      applicationDeadline: application.internshipId.applicationDeadline,
-      numPositions: application.internshipId.numPositions,
-      description: application.internshipId.description,
-      requiredSkills: application.internshipId.requiredSkills,
-      coverLetter: application.coverLetter,
-      portfolio: application.portfolio,
-      appliedAt: application.appliedAt,
-    }));
+    const formattedApplications = applications
+      .filter((app) => app.internshipId)
+      .map((application) => ({
+        applicationId: application._id,
+        internshipId: application.internshipId._id,
+        title: application.internshipId.title,
+        companyName: application.internshipId.CompanyName,
+        department: application.internshipId.department,
+        startDate: application.internshipId.startDate,
+        endDate: application.internshipId.endDate,
+        location: application.internshipId.location,
+        remote: application.internshipId.remote,
+        paid: application.internshipId.paid,
+        applicationStatus: application.status,
+        applicationDeadline: application.internshipId.applicationDeadline,
+        numPositions: application.internshipId.numPositions,
+        description: application.internshipId.description,
+        requiredSkills: application.internshipId.requiredSkills,
+        coverLetter: application.coverLetter,
+        portfolio: application.portfolio,
+        appliedAt: application.appliedAt,
+      }));
 
     res.status(200).json({
       status: "success",

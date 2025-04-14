@@ -30,12 +30,13 @@ const URL = "http://10.240.140.29:3000";
 
 function ApplicantDetailScreen() {
   const router = useRouter();
-  const { GetApplicantDetail } = useAuth();
-  const { studentId, id } = useLocalSearchParams();
+  const { GetApplicantDetail, UpdateApplicationStatus } = useAuth();
+  const { studentId, id, applicationId } = useLocalSearchParams();
   const [applicant, setApplicant] = useState<ApplicantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const fetchApplicantDetail = async () => {
@@ -157,6 +158,32 @@ function ApplicantDetailScreen() {
     }
   };
 
+  const handleUpdateStatus = async (status: string) => {
+    if (!applicationId) {
+      Alert.alert("Error", "Application ID is missing");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await UpdateApplicationStatus(applicationId as string, status);
+
+      Alert.alert("Success", `Application ${status} successfully!`, [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.message || "Failed to update application status"
+      );
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center">
@@ -260,29 +287,20 @@ function ApplicantDetailScreen() {
           <View className="flex-row justify-between px-4 mb-6 mt-2 gap-4">
             <TouchableOpacity
               className="bg-green-500 px-6 py-3 rounded-lg flex-1 ml-2"
-              onPress={() => {
-                Alert.alert(
-                  "Accept",
-                  "Accept functionality will be implemented soon"
-                );
-              }}
+              disabled={updating}
+              onPress={() => handleUpdateStatus("accepted")}
             >
               <Text className="text-white font-semibold text-center">
-                Accept
+                {updating ? "Updating..." : "Accept"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="bg-red-500 px-6 py-3 rounded-lg flex-1 mr-2"
-              onPress={() => {
-                
-                Alert.alert(
-                  "Reject",
-                  "Reject functionality will be implemented soon"
-                );
-              }}
+              disabled={updating}
+              onPress={() => handleUpdateStatus("rejected")}
             >
               <Text className="text-white font-semibold text-center">
-                Reject
+                {updating ? "Updating..." : "Reject"}
               </Text>
             </TouchableOpacity>
           </View>

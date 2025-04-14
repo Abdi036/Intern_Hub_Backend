@@ -99,19 +99,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="applicants"
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              Icon={UsersIcon}
-              color={color}
-              name="applicants"
-              focused={focused}
-            />
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="internship"
         options={{
