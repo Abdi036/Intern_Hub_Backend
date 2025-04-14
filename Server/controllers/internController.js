@@ -426,7 +426,7 @@ exports.GetAllApplicants = catchAsync(async (req, res, next) => {
 
   // Find all applications for this internship
   const applications = await Application.find({ internshipId })
-    .populate("studentId", "name email")
+    .populate("studentId", "name email photo")
     .select("_id studentId status appliedAt");
 
   if (!applications || applications.length === 0) {
@@ -439,6 +439,7 @@ exports.GetAllApplicants = catchAsync(async (req, res, next) => {
     studentId: app.studentId._id,
     name: app.studentId.name,
     email: app.studentId.email,
+    photo: app.studentId.photo,
     status: app.status,
     appliedAt: app.appliedAt,
   }));

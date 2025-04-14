@@ -37,12 +37,17 @@ interface AuthContextType {
   ViewUsers: () => Promise<any>;
   DeleteUsers: (userId: string) => Promise<boolean>;
   GetAllMypostedinterships: () => Promise<any>;
+  ViewMyPostedInternship: (id: string) => Promise<any>;
+  EditMyPostedInternship: (id: string, data: any) => Promise<any>;
+  DeleteMyPostedInternship: (id: string) => Promise<any>;
+  GetAllApplicants: (id: string) => Promise<any>;
+  GetApplicantDetail: (id: string, studentId: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "http://192.168.43.5:3000/api/v1";
-// const API_URL = "http://10.240.163.41:3000/api/v1";
+// const API_URL = "http://192.168.43.5:3000/api/v1";
+const API_URL = "http://10.240.140.29:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -515,12 +520,158 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return data;
     } catch (error: any) {
-      console.error("View internship error:", error);
       setError(error.message || "An error occurred while viewing internship");
       throw error;
     }
   };
 
+  const ViewMyPostedInternship = async (id: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/internships/posted/${id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch internship");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err: any) {
+      setError(
+        err.message || "An error occurred while viewing your posted internship."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const EditMyPostedInternship = async (id: string, data: any) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/internships/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Failed to update internship.";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // Ignore if response body is not JSON or empty
+        }
+        throw new Error(errorMessage);
+      }
+
+      const responseData = await response.json();
+      setIsLoading(false);
+      return responseData;
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(
+        err.message || "An error occurred while editing your posted internship."
+      );
+      throw err;
+    }
+  };
+
+  const DeleteMyPostedInternship = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/internships/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+    } catch (err: any) {
+      setError(
+        err.message ||
+          "An error occurred while deleting your posted internship."
+      );
+    }
+  };
+
+  const GetAllApplicants = async (id: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_URL}/internships/${id}/applicants`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data || !data.data) {
+        throw new Error("Invalid response structure from server");
+      }
+
+      return data;
+    } catch (err: any) {
+      setError(err.message || "An error occurred while fetching applicants");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const GetApplicantDetail = async (id: string, studentId: string) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/internships/${id}/applicants/${studentId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data || !data.data) {
+        throw new Error("Invalid response structure from server");
+      }
+
+      return data;
+    } catch (err: any) {
+      setError(
+        err.message || "An error occurred while fetching applicant detail"
+      );
+      throw err;
+    }
+  };
   return (
     <AuthContext.Provider
       value={{
@@ -545,6 +696,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ViewUsers,
         DeleteUsers,
         GetAllMypostedinterships,
+        ViewMyPostedInternship,
+        EditMyPostedInternship,
+        DeleteMyPostedInternship,
+        GetAllApplicants,
+        GetApplicantDetail,
       }}
     >
       {children}

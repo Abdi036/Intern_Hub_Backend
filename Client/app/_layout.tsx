@@ -21,6 +21,18 @@ export default function RootLayout() {
           name="(pages)/application-details"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="(pages)/own-internship-details"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(pages)/applicants"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(pages)/applicants-detail"
+          options={{ headerShown: false }}
+        />
       </Stack>
     </AuthContextProvider>
   );
