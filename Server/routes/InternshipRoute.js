@@ -15,10 +15,8 @@ const {
   GetAllApplicants,
   GetApplicant,
   UpdateApplicationStatus,
-  GetCoverLetter,
 } = require("../controllers/internController");
 const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
-const { gfs } = require("../utils/gridfsConfig");
 
 const router = express.Router();
 
@@ -73,8 +71,5 @@ router.get(
   restrictTo("company"),
   GetApplicant
 );
-
-// Add route to serve cover letters
-router.get("/cover-letter/:fileId", GetCoverLetter);
 
 module.exports = router;

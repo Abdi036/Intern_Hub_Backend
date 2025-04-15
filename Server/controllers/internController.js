@@ -6,12 +6,6 @@ const Application = require("../models/applicationModel");
 const sendEmail = require("../utils/email");
 const fs = require("fs");
 const path = require("path");
-const {
-  uploadToGridFS,
-  deleteFileFromGridFS,
-  getFileFromGridFS,
-} = require("../utils/gridfsConfig");
-const mongoose = require("mongoose");
 
 exports.PostInternship = catchAsync(async (req, res, next) => {
   const {
@@ -276,15 +270,29 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     );
   }
 
-  // 4) Upload PDF to GridFS
+  // 4) Save PDF file
   const pdfFilename = `cover-letter-${req.user._id}-${Date.now()}.pdf`;
-  const fileId = await uploadToGridFS(req.file.buffer, pdfFilename);
+  const pdfPath = path.join(
+    "public",
+    "documents",
+    "cover-letters",
+    pdfFilename
+  );
+
+  // Ensure directory exists
+  const dir = path.dirname(pdfPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  // Save the PDF file
+  fs.writeFileSync(pdfPath, req.file.buffer);
 
   // 5) Create application
   const application = await Application.create({
     internshipId: req.params.internshipId,
     studentId: req.user._id,
-    coverLetter: fileId, // Store the GridFS file ID
+    coverLetter: pdfFilename,
     portfolio: req.body.portfolio,
     status: "pending",
   });
@@ -635,16 +643,4 @@ exports.UpdateApplicationStatus = catchAsync(async (req, res, next) => {
       application,
     },
   });
-});
-
-exports.GetCoverLetter = catchAsync(async (req, res, next) => {
-  try {
-    const fileId = new mongoose.Types.ObjectId(req.params.fileId);
-    const fileBuffer = await getFileFromGridFS(fileId);
-
-    res.set("Content-Type", "application/pdf");
-    res.send(fileBuffer);
-  } catch (error) {
-    return next(new AppError("Error retrieving cover letter", 500));
-  }
 });
