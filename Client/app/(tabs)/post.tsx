@@ -12,7 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_URL = "http://10.240.140.29:3000/api/v1";
+const API_URL = "https://intern-hub-server.onrender.com/api/v1";
 
 export default function PostInternship() {
   const { user } = useAuth();

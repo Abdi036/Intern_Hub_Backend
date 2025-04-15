@@ -34,8 +34,8 @@ export default function Profile() {
   const profilePhoto =
     image ||
     (user?.data?.photo === "default-user.jpg"
-      ? "http://10.240.163.41:3000/images/users/default-user.jpg"
-      : `http://10.240.163.41:3000/images/users/${user?.data?.photo}`);
+      ? "https://intern-hub-server.onrender.com/images/users/default-user.jpg"
+      : `https://intern-hub-server.onrender.com/images/users/${user?.data?.photo}`);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({

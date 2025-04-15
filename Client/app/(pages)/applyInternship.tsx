@@ -54,8 +54,8 @@ export default function ApplyInternship() {
 
       const response = await ApplyInternship(internshipId as string, formData);
       router.push("/(tabs)/applications");
-    } catch (error) {
-      console.error("Apply internship error:", error);
+    } catch (error: any) {
+      console.error(error.message);
     }
   };
 

@@ -31,7 +31,7 @@ export default function ResetPassword() {
         },
       ]);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong");
+      Alert.alert(err.message);
     }
   };
 
@@ -64,7 +64,7 @@ export default function ResetPassword() {
 
           <FormField
             title="New Password"
-            placeholder="Enter your new password"
+            placeholder="Enter your new password(min 8 characters)"
             value={password}
             handleChangeText={setPassword}
             secureTextEntry
