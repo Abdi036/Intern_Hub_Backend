@@ -33,7 +33,7 @@ export default function Signin() {
 
       router.replace("/home");
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong");
+      Alert.alert(err.message);
     }
   }
 
@@ -41,7 +41,6 @@ export default function Signin() {
     <SafeAreaView className="h-full bg-white">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="w-full items-center justify-center min-h-[85vh] px-4 py-10">
-          {/* Moved the Image here */}
           <Image
             source={require("../../assets/icons/login.png")}
             className="w-24 h-24 mb-6"

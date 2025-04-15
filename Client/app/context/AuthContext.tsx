@@ -51,7 +51,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // const API_URL = "http://192.168.43.5:3000/api/v1";
-const API_URL = "http://10.240.140.29:3000/api/v1";
+const API_URL = "http://10.240.163.59:3000/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -99,8 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(data);
     } catch (err: any) {
-      console.error("Signup error:", err);
-      setError(err.message || "An error occurred during signup");
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -131,8 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
     } catch (err: any) {
-      console.error("Signin error:", err);
-      setError(err.message || "An error occurred during signin");
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -144,8 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await AsyncStorage.removeItem("user");
       setUser(null);
-    } catch (err) {
-      console.error("Error signing out:", err);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -172,10 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return data;
     } catch (err: any) {
-      console.error("Forgot password error:", err);
-      setError(
-        err.message || "An error occurred during forgot password request"
-      );
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -205,8 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
     } catch (err: any) {
-      console.error("Reset password error:", err);
-      setError(err.message || "An error occurred while resetting password");
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -274,8 +268,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const deleteProfile = async () => {
     try {
+      setIsLoading(true);
       setError(null);
-
       const response = await fetch(`${API_URL}/user/delete-me`, {
         method: "DELETE",
         headers: {
@@ -295,18 +289,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Clear user data from AsyncStorage
       await AsyncStorage.removeItem("user");
+      setIsLoading(false);
       setUser(null);
 
       return data;
-    } catch (error: any) {
-      setError(error.message || "An error occurred while deleting profile");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
     }
   };
 
   // View all internships
   const ViewAllInternships = async (page = 1) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/internships?page=${page}`, {
         headers: {
           Authorization: `Bearer ${user?.token}`,
@@ -320,15 +317,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return data;
-    } catch (error: any) {
-      console.error("View internship error:", error);
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // View internship by id
   const ViewInternship = async (id: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/internships/${id}`, {
         headers: {
           Authorization: `Bearer ${user?.token}`,
@@ -339,15 +340,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Failed to view internship");
       }
       return data;
-    } catch (error: any) {
-      console.error("View internship error:", error);
-      setError(error.message || "An error occurred while viewing internship");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const DeleteInternship = async (id: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/admin/internships/${id}`, {
         method: "DELETE",
         headers: {
@@ -359,9 +363,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Failed to delete internship");
       }
       return data;
-    } catch (error: any) {
-      setError(error.message || "An error occurred while deleting internship");
-      throw error;
+    } catch (err: any) {
+      setError(err.message || "An error occurred while deleting internship");
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
   // Apply For internship
@@ -371,6 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch(
         `${API_URL}/internships/${internshipId}/apply`,
         {
@@ -389,9 +396,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return data;
-    } catch (error: any) {
-      console.error("Apply internship error:", error);
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -400,6 +407,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // student can view their applications
   const ViewApplications = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/internships/my-applications`, {
         method: "GET",
         headers: {
@@ -415,14 +424,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return data.applications || data;
-    } catch (error) {
-      console.error("View applications error:", error);
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
   // student can view specific application detail
   const ApplicationDetail = async (id: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/internships/${id}/application`, {
         method: "GET",
         headers: {
@@ -438,15 +451,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return data.applications || data;
-    } catch (error) {
-      console.error("View applications error:", error);
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Student can delete their application
   const DeleteApplication = async (id: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(
         `${API_URL}/internships/${id}/delete-application`,
         {
@@ -457,12 +474,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         }
       );
-    } catch (error: any) {
-      console.error("Delete application error:", error);
-      setError(error.message || "An error occurred while deleting application");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
+
   const ViewUsers = async () => {
     try {
       setIsLoading(true);
@@ -476,10 +495,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       const data = await response.json();
       return data;
-    } catch (error: any) {
-      console.error("View users error:", error);
-      setError(error.message || "An error occurred while viewing users");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -496,9 +514,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
-    } catch (error: any) {
-      setError(error.message || "An error occurred while deleting user");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -509,6 +527,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const GetAllMypostedinterships = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(
         `${API_URL}/internships/allMypostedInterships`,
         {
@@ -523,9 +543,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Failed to view internships");
       }
       return data;
-    } catch (error: any) {
-      setError(error.message || "An error occurred while viewing internship");
-      throw error;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -548,9 +570,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(
-        err.message || "An error occurred while viewing your posted internship."
-      );
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -584,16 +604,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return responseData;
     } catch (err: any) {
-      setIsLoading(false);
-      setError(
-        err.message || "An error occurred while editing your posted internship."
-      );
+      setError(err.message);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const DeleteMyPostedInternship = async (id: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(`${API_URL}/internships/${id}`, {
         method: "DELETE",
         headers: {
@@ -601,10 +622,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
     } catch (err: any) {
-      setError(
-        err.message ||
-          "An error occurred while deleting your posted internship."
-      );
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -635,7 +656,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return data;
     } catch (err: any) {
-      setError(err.message || "An error occurred while fetching applicants");
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -644,6 +665,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const GetApplicantDetail = async (id: string, studentId: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
       const response = await fetch(
         `${API_URL}/internships/${id}/applicants/${studentId}`,
         {
@@ -667,13 +690,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data || !data.data) {
         throw new Error("Invalid response structure from server");
       }
-
       return data;
     } catch (err: any) {
-      setError(
-        err.message || "An error occurred while fetching applicant detail"
-      );
+      setError(err.message);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -709,9 +731,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(
-        err.message || "An error occurred while updating application status"
-      );
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);

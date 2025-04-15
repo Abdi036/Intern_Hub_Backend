@@ -1,6 +1,7 @@
 import "../global.css";
 import { Stack } from "expo-router";
 import AuthContextProvider from "./context/AuthContext";
+import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   return (
@@ -34,6 +35,7 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
       </Stack>
+      <StatusBar backgroundColor="#161622" style="light" />
     </AuthContextProvider>
   );
 }

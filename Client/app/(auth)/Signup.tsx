@@ -6,7 +6,6 @@ import CustomButton from "@/components/CustomButton";
 import { Link, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 
-
 interface FormData {
   name: string;
   email: string;
@@ -40,7 +39,7 @@ export default function Signup() {
 
       router.replace("/signin");
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong");
+      Alert.alert(err.message);
     }
   }
 
@@ -58,7 +57,7 @@ export default function Signup() {
           <Text className="text-3xl mt-10 font-bold text-black">Sign Up</Text>
 
           <FormField
-            title="FullName"
+            title="Full Name"
             placeholder="Tony Stark"
             value={form.name}
             handleChangeText={(text) => setForm({ ...form, name: text })}
@@ -68,7 +67,7 @@ export default function Signup() {
 
           <FormField
             title="Email"
-            placeholder="name@example.com"
+            placeholder="email@example.com"
             value={form.email}
             handleChangeText={(text) => setForm({ ...form, email: text })}
             keyboardType="email-address"

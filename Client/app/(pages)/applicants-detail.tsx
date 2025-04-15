@@ -159,13 +159,7 @@ function ApplicantDetailScreen() {
   };
 
   const handleUpdateStatus = async (status: string) => {
-    if (!applicationId) {
-      Alert.alert("Error", "Application ID is missing");
-      return;
-    }
-
     try {
-      setUpdating(true);
       await UpdateApplicationStatus(applicationId as string, status);
 
       Alert.alert("Success", `Application ${status} successfully!`, [
@@ -175,12 +169,9 @@ function ApplicantDetailScreen() {
         },
       ]);
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Failed to update application status"
-      );
+      Alert.alert(error.message);
     } finally {
-      setUpdating(false);
+      setUpdating(true);
     }
   };
 
@@ -226,7 +217,6 @@ function ApplicantDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1">
-        {/* Header with Back Button */}
         <View className="flex-row items-center p-4 bg-white border-b border-gray-200">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <Ionicons name="arrow-back" size={24} color="#333" />
@@ -286,21 +276,25 @@ function ApplicantDetailScreen() {
           </View>
           <View className="flex-row justify-between px-4 mb-6 mt-2 gap-4">
             <TouchableOpacity
-              className="bg-green-500 px-6 py-3 rounded-lg flex-1 ml-2"
-              disabled={updating}
               onPress={() => handleUpdateStatus("accepted")}
+              className={`${
+                updating ? "bg-gray-400" : ""
+              } bg-green-500 px-6 py-3 rounded-lg flex-1 ml-2`}
+              disabled={updating}
             >
               <Text className="text-white font-semibold text-center">
-                {updating ? "Updating..." : "Accept"}
+                Accept
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="bg-red-500 px-6 py-3 rounded-lg flex-1 mr-2"
-              disabled={updating}
               onPress={() => handleUpdateStatus("rejected")}
+              className={`${
+                updating ? "bg-gray-400" : ""
+              } bg-red-500 px-6 py-3 rounded-lg flex-1 mr-2`}
+              disabled={updating}
             >
               <Text className="text-white font-semibold text-center">
-                {updating ? "Updating..." : "Reject"}
+                Reject
               </Text>
             </TouchableOpacity>
           </View>
