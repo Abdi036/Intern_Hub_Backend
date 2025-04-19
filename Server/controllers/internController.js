@@ -340,6 +340,10 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
   const tempPath = path.join(__dirname, "../uploads", req.file.originalname);
   fs.writeFileSync(tempPath, req.file.buffer);
 
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
   // 5) Upload to Cloudinary
   const result = await cloudinary.uploader.upload(tempPath, {
     resource_type: "raw",
