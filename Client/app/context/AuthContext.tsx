@@ -7,10 +7,52 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Add custom error types
+interface ApiError extends Error {
+  status?: number;
+  data?: any;
+}
+
+interface NetworkError extends Error {
+  isNetworkError: boolean;
+}
+
+// Add error handling utility functions
+const handleApiError = async (response: Response): Promise<never> => {
+  let errorMessage = "An error occurred";
+  let errorData;
+
+  try {
+    errorData = await response.json();
+    errorMessage = errorData.message || errorData.error || errorMessage;
+  } catch (e) {
+    errorMessage = `HTTP error! status: ${response.status}`;
+  }
+
+  const error: ApiError = new Error(errorMessage);
+  error.status = response.status;
+  error.data = errorData;
+  throw error;
+};
+
+// Add network error handling utility
+const handleNetworkError = (error: any): never => {
+  if (error.message === "Network request failed") {
+    const networkError: NetworkError = new Error(
+      "Unable to connect to the server. Please check your internet connection and try again."
+    ) as NetworkError;
+    networkError.isNetworkError = true;
+    throw networkError;
+  }
+  throw error;
+};
+
 interface AuthContextType {
   user: any | null;
   isLoading: boolean;
   error: string | null;
+  setError: (error: string | null) => void;
+  setIsLoading: (isLoading: boolean) => void;
   signup: (userData: {
     name: string;
     email: string;
@@ -50,7 +92,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "https://intern-hub-server.onrender.com/api/v1";
+const API_URL = "http://10.240.163.59:3000/api/v1";
+// const API_URL = "http://localhost:3000/api/v1/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -67,10 +110,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error("Error loading stored session:", err);
+        setError("Failed to load stored session");
       }
     }
     loadStoredSession();
   }, []);
+
+  // Generic error handler for all API calls
+  const handleError = (err: any) => {
+    if (err.isNetworkError) {
+      setError(
+        "Network error. Please check your internet connection and try again."
+      );
+    } else if (err.message.includes("Network request failed")) {
+      setError(
+        "Unable to connect to the server. Please check your internet connection and try again."
+      );
+    } else {
+      setError(err.message || "An unexpected error occurred");
+    }
+    throw err;
+  };
 
   //   register user to app
   const signup = async (userData: {
@@ -91,15 +151,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Signup failed");
+        await handleApiError(response);
       }
+
+      const data = await response.json();
       setUser(data);
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -117,20 +176,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
+      }).catch(handleNetworkError);
 
       if (!response.ok) {
-        throw new Error(data.message || "Signin failed");
+        await handleApiError(response);
       }
+
+      const data = await response.json();
 
       // Store user data in AsyncStorage
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -159,18 +217,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to process forgot password request"
-        );
+        await handleApiError(response);
       }
 
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -189,18 +243,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ token, password }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to reset password");
+        await handleApiError(response);
       }
 
-      // Store the new token and user data
+      const data = await response.json();
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -219,18 +270,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: formData,
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update profile");
+        await handleApiError(response);
       }
 
-      // Save updated user data
+      const data = await response.json();
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
-    } catch (error: any) {
-      setError(error.message || "An error occurred while updating profile");
-      throw error;
+    } catch (err: any) {
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -250,16 +298,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ currentPassword, password }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update password");
+        await handleApiError(response);
       }
 
+      const data = await response.json();
       return data;
-    } catch (error: any) {
-      setError(error.message || "An error occurred while updating password");
-      throw error;
+    } catch (err: any) {
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -276,25 +322,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
       if (response.status === 204) {
         return { message: "Profile deleted successfully." };
       }
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to delete profile");
-      }
-
-      // Clear user data from AsyncStorage
       await AsyncStorage.removeItem("user");
-      setIsLoading(false);
       setUser(null);
-
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -309,16 +352,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to view internships");
+        await handleApiError(response);
       }
 
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -334,14 +375,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to view internship");
+        await handleApiError(response);
       }
+
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -357,14 +399,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to delete internship");
+        await handleApiError(response);
       }
+
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message || "An error occurred while deleting internship");
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -388,15 +431,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to apply to internship");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit application");
       }
 
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An unexpected error occurred");
       throw err;
     } finally {
       setIsLoading(false);
@@ -416,16 +459,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        setError(data.message || "Failed to view applications");
+        await handleApiError(response);
       }
 
+      const data = await response.json();
       return data.applications || data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -443,16 +484,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to view applications");
+        await handleApiError(response);
       }
 
+      const data = await response.json();
       return data.applications || data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -473,9 +512,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         }
       );
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
+      const data = await response.json();
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -492,11 +537,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
       const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -513,13 +562,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
+      const data = await response.json();
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
-    return true;
   };
 
   // Note: I have not implemented the Postinternship Api integration in this file.
@@ -537,14 +591,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         }
       );
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to view internships");
+        await handleApiError(response);
       }
+
+      const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -563,13 +618,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch internship");
+        await handleApiError(response);
       }
 
       const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -589,22 +644,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to update internship.";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (parseError) {
-          // Ignore if response body is not JSON or empty
-        }
-        throw new Error(errorMessage);
+        await handleApiError(response);
       }
 
       const responseData = await response.json();
-      setIsLoading(false);
       return responseData;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -620,9 +666,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
+      const data = await response.json();
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -641,22 +693,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        await handleApiError(response);
       }
 
       const data = await response.json();
-
-      if (!data || !data.data) {
-        throw new Error("Invalid response structure from server");
-      }
-
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -678,21 +721,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        await handleApiError(response);
       }
 
       const data = await response.json();
-
-      if (!data || !data.data) {
-        throw new Error("Invalid response structure from server");
-      }
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -721,17 +756,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        await handleApiError(response);
       }
 
       const data = await response.json();
       return data;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      return handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -743,6 +774,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         error,
+        setError,
+        setIsLoading,
         signup,
         signin,
         signout,

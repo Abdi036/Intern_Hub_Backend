@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/app/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import moment from "moment";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
 interface Application {
@@ -32,9 +32,7 @@ export default function Application() {
       const data = await ViewApplications();
 
       setApplications(data?.data?.applications ?? []);
-    } catch (error) {
-      console.error("Failed to fetch applications:", error);
-    }
+    } catch (error) {}
   };
 
   useFocusEffect(
@@ -47,6 +45,14 @@ export default function Application() {
       load();
     }, [])
   );
+
+  const { refresh } = useLocalSearchParams();
+
+  useEffect(() => {
+    if (refresh) {
+      fetchApplications();
+    }
+  }, [refresh]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

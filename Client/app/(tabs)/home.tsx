@@ -77,8 +77,10 @@ export default function Home() {
   if (loading && page === 1) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text className="mt-4 text-gray-700">Loading internships...</Text>
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-4 text-gray-700 text-lg font-semibold">
+          Loading internships...
+        </Text>
       </View>
     );
   }
@@ -86,7 +88,9 @@ export default function Home() {
   if (error) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-        <Text className="text-red-500 text-center text-lg">{error}</Text>
+        <Text className="text-red-500 text-center text-xl font-semibold">
+          {error}
+        </Text>
       </View>
     );
   }
@@ -97,24 +101,30 @@ export default function Home() {
         data={internships}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
-          <View className="p-4 bg-white mb-6 rounded-lg">
-            <Text className="text-xl font-semibold text-gray-800">
+          <View className="p-5 bg-white mb-5 mx-4 rounded-2xl shadow-lg">
+            <Text className="text-2xl font-bold text-gray-800">
               {item.CompanyName}
             </Text>
-            <Text className="text-md text-gray-600 mt-1">
+            <Text className="text-base text-gray-600 mt-1">
               {item.department}
             </Text>
             <Text
-              className={`mt-1 ${
+              className={`mt-1 font-medium ${
                 item.remote ? "text-green-600" : "text-red-600"
               }`}
             >
               {item.remote ? "Remote" : "On-site"}
             </Text>
-            <Text className="text-base text-green-600 mt-1">
+            <Text
+              className={`mt-1 font-medium ${
+                item.paid ? "text-green-700" : "text-yellow-600"
+              }`}
+            >
               {item.paid ? "Paid Internship" : "Unpaid Internship"}
             </Text>
-            <Text className="text-sm text-gray-500 mt-1">{item.position}</Text>
+            <Text className="text-sm text-gray-500 mt-1 italic">
+              {item.position}
+            </Text>
             <Text className="text-sm text-gray-500 mt-2">{item.location}</Text>
 
             <TouchableOpacity
@@ -127,30 +137,21 @@ export default function Home() {
         )}
         ListHeaderComponent={() => (
           <View className="px-4 py-6">
-            <Text className="text-3xl font-bold">Discover Internships</Text>
-            <Text className="text-lg mt-2">
+            <Text className="text-4xl font-extrabold text-gray-900">
+              🔍 Discover Internships
+            </Text>
+            <Text className="text-lg text-gray-600 mt-2">
               Find your perfect internship opportunity
             </Text>
 
             {/* Filter Section */}
-            <View className="flex-row mt-4 space-x-4 gap-2 items-center">
-              <Text className="font-bold">Filter By:</Text>
-              <TouchableOpacity
-                onPress={() => {}}
-                className={`${
-                  true ? "bg-gray-500" : "bg-gray-300"
-                } px-4 py-2 rounded-lg`}
-              >
-                <Text className="text-white">Remote</Text>
+            <View className="flex-row mt-5 space-x-4 items-center">
+              <Text className="font-semibold text-gray-700">Filter By:</Text>
+              <TouchableOpacity className="bg-indigo-500 px-4 py-2 rounded-full">
+                <Text className="text-white font-medium">Remote</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {}}
-                className={`${
-                  false ? "bg-gray-500" : "bg-gray-300"
-                } px-4 py-2 rounded-lg`}
-              >
-                <Text className="text-white">Paid</Text>
+              <TouchableOpacity className="bg-indigo-500 px-4 py-2 rounded-full">
+                <Text className="text-white font-medium">Paid</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -160,9 +161,9 @@ export default function Home() {
         ListFooterComponent={
           isFetchingMore ? (
             <View className="py-6 items-center justify-center">
-              <ActivityIndicator size="small" color="#0000ff" />
+              <ActivityIndicator size="small" color="#4f46e5" />
               <Text className="text-sm text-gray-600 mt-2">
-                Loading more...
+                Loading more internships...
               </Text>
             </View>
           ) : null

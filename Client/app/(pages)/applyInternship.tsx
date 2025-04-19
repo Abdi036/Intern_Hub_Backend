@@ -4,8 +4,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,33 +14,42 @@ import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/app/context/AuthContext";
 
 export default function ApplyInternship() {
-  const { isLoading, ApplyInternship } = useAuth();
+  const { isLoading, ApplyInternship, error, setError, setIsLoading } =
+    useAuth();
   const { internshipId } = useLocalSearchParams();
   const [coverLetter, setCoverLetter] = useState<any>(null);
   const [portfolioLink, setPortfolioLink] = useState("");
 
-  // 📄 Pick PDF cover letter
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Error", error, [
+        { text: "OK", onPress: () => setError(null) },
+      ]);
+    }
+  }, [error]);
+
   const handlePickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
       });
-
       if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
         setCoverLetter(result.assets[0]);
       }
     } catch (error) {
       console.error("Error picking document:", error);
+      setError("Failed to pick document. Please try again.");
     }
   };
 
   const handleSubmit = async () => {
     if (!coverLetter) {
-      alert("Please upload your cover letter.");
+      setError("Please upload your cover letter.");
       return;
     }
 
     try {
+      setIsLoading(true);
       const formData = new FormData();
       formData.append("coverLetter", {
         uri: coverLetter.uri,
@@ -47,85 +57,107 @@ export default function ApplyInternship() {
         type: "application/pdf",
       } as any);
 
-      // Only append if portfolioLink is not empty
       if (portfolioLink.trim() !== "") {
         formData.append("portfolio", portfolioLink);
       }
 
       const response = await ApplyInternship(internshipId as string, formData);
-      router.push("/(tabs)/applications");
+      if (response) {
+        router.replace({
+          pathname: "/(tabs)/applications",
+          params: { refresh: Date.now().toString() },
+        });
+      }
     } catch (error: any) {
-      console.error(error.message);
+      setError(
+        error.message || "Failed to submit application. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    setError(null);
+    setIsLoading(false);
+    router.back();
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1 p-4">
-        <View className="bg-white p-4 rounded-lg mb-4">
-          <Text className="text-xl font-bold mb-2">Internship Application</Text>
-          <Text className="text-base text-gray-600">
-            Position ID: {internshipId}
+    <SafeAreaView className="flex-1 bg-gradient-to-br from-blue-50 to-purple-100">
+      <ScrollView className="flex-1 px-4 py-6">
+        <View className="bg-white rounded-2xl p-6 shadow-md mb-6">
+          <Text className="text-2xl font-extrabold text-blue-600 mb-1">
+            Apply Now
+          </Text>
+          <Text className="text-gray-500 text-sm">
+            Internship ID:{" "}
+            <Text className="font-medium text-gray-700">{internshipId}</Text>
           </Text>
         </View>
 
-        <View className="bg-white p-4 rounded-lg mb-4">
-          <Text className="text-lg font-bold mb-3">Application Form</Text>
+        <View className="bg-white rounded-2xl p-6 shadow-lg mb-6">
+          <Text className="text-xl font-semibold text-gray-800 mb-4">
+            Application Details
+          </Text>
 
-          <Text className="text-base font-medium mb-2">Cover Letter *</Text>
+          {/* Cover Letter Upload */}
+          <Text className="text-base font-medium mb-2 text-gray-700">
+            Upload Cover Letter *
+          </Text>
           <TouchableOpacity
-            className="border border-gray-300 p-3 rounded-lg mb-4 flex-row items-center justify-between"
+            className="border border-dashed border-gray-400 p-4 rounded-xl mb-5 bg-gray-50 flex-row items-center justify-between"
             onPress={handlePickDocument}
+            disabled={isLoading}
           >
             <View className="flex-row items-center">
               <Ionicons
-                name="document-text-outline"
+                name="document-attach-outline"
                 size={24}
                 color="#4B5563"
               />
-              <Text className="ml-2 text-gray-700">
-                {coverLetter
-                  ? coverLetter.name
-                  : "Upload your cover letter (PDF)"}
+              <Text className="ml-2 text-gray-700 text-sm">
+                {coverLetter ? coverLetter.name : "Tap to upload PDF"}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons name="cloud-upload-outline" size={20} color="#6B7280" />
           </TouchableOpacity>
 
-          <Text className="text-base font-medium mb-2">
+          {/* Portfolio Input */}
+          <Text className="text-base font-medium mb-2 text-gray-700">
             Portfolio Link (Optional)
           </Text>
           <TextInput
-            className="border border-gray-300 p-3 rounded-lg mb-4"
+            className="border border-gray-300 p-3 rounded-xl mb-6 bg-white text-gray-800"
             placeholder="https://your-portfolio.com"
+            placeholderTextColor="#9CA3AF"
             value={portfolioLink}
             onChangeText={setPortfolioLink}
             autoCapitalize="none"
             keyboardType="url"
+            editable={!isLoading}
           />
 
+          {/* Submit Button */}
           <TouchableOpacity
-            className={`p-4 rounded-lg items-center mt-2 ${
-              isLoading ? "bg-gray-400" : "bg-blue-500"
+            className={`p-4 rounded-xl items-center transition-all duration-200 ${
+              isLoading ? "bg-gray-400" : "bg-black"
             }`}
             onPress={handleSubmit}
             disabled={isLoading}
           >
-            <Text
-              className={`text-lg font-bold ${
-                isLoading ? "text-gray-200" : "text-white"
-              }`}
-            >
+            <Text className="text-white font-semibold text-base">
               {isLoading ? "Submitting..." : "Submit Application"}
             </Text>
           </TouchableOpacity>
         </View>
 
+        {/* Cancel Button */}
         <TouchableOpacity
-          className="bg-gray-300 p-4 rounded-lg mb-4 items-center"
-          onPress={() => router.back()}
+          className="p-4 rounded-xl items-center bg-white border border-gray-300"
+          onPress={handleCancel}
         >
-          <Text className="text-gray-800 text-base font-medium">Cancel</Text>
+          <Text className="text-red-500 font-medium text-base">Cancel</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

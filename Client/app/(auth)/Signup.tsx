@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, Text, View, Pressable, Image, Alert } from "react-native";
 import FormField from "@/components/FormField";
@@ -14,13 +14,25 @@ interface FormData {
 }
 
 export default function Signup() {
-  const { signup, isLoading } = useAuth();
+  const { signup, isLoading, error, setError } = useAuth();
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
     role: "",
     password: "",
   });
+
+  // Clear error when component mounts or form changes
+  useEffect(() => {
+    setError(null);
+  }, [form.name, form.email, form.password, form.role]);
+
+  // Show error alert when error state changes
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Error", error);
+    }
+  }, [error]);
 
   // handling the submit form
   async function submit() {
@@ -38,8 +50,9 @@ export default function Signup() {
       });
 
       router.replace("/signin");
-    } catch (err: any) {
-      Alert.alert(err.message);
+    } catch (err) {
+      // Error is already handled by AuthContext
+      console.log("Signup error:", err);
     }
   }
 

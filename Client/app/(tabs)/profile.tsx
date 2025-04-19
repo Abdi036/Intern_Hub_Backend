@@ -5,6 +5,7 @@ import {
   TextInput,
   Alert,
   View,
+  ScrollView,
 } from "react-native";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -22,6 +23,7 @@ export default function Profile() {
     error,
     isLoading,
   } = useAuth();
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [name, setName] = useState(user?.data?.name || "");
@@ -34,8 +36,8 @@ export default function Profile() {
   const profilePhoto =
     image ||
     (user?.data?.photo === "default-user.jpg"
-      ? "https://intern-hub-server.onrender.com/images/users/default-user.jpg"
-      : `https://intern-hub-server.onrender.com/images/users/${user?.data?.photo}`);
+      ? "http://10.240.163.59:3000/images/users/default-user.jpg"
+      : `http://10.240.163.59:3000/images/users/${user?.data?.photo}`);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -89,15 +91,12 @@ export default function Profile() {
     }
   };
 
-  // Update Password Function
   const handleUpdatePassword = async () => {
     try {
       if (currentPassword && password) {
         await UpdatePassword(currentPassword, password);
         Alert.alert("Success", "Password updated successfully!");
         handleSignOut();
-        setCurrentPassword("");
-        setPassword("");
       } else {
         Alert.alert("Error", "Please fill in all fields.");
       }
@@ -108,128 +107,156 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView className="flex justify-center items-center h-full px-4">
-      <Text className="text-2xl font-bold text-blue-500 mb-6">
-        Profile Page
-      </Text>
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="px-6 pt-8">
+          <View className="bg-white rounded-2xl shadow-md p-6 items-center">
+            <Text className="text-3xl font-bold text-blue-600 mb-4">
+              My Profile
+            </Text>
 
-      <TouchableOpacity onPress={handlePickImage}>
-        <Image
-          source={{ uri: profilePhoto }}
-          className="w-28 h-28 rounded-full mb-4"
-        />
-      </TouchableOpacity>
+            <TouchableOpacity onPress={handlePickImage}>
+              <Image
+                source={{ uri: profilePhoto }}
+                className="w-28 h-28 rounded-full border-4 border-gray-300"
+              />
+            </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => setIsEditingName(true)}>
-        {isEditingName ? (
-          <TextInput
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              setIsChanged(true);
-            }}
-            className="text-lg font-semibold mb-2 border-b border-gray-400 w-64 text-center"
-            autoFocus
-          />
-        ) : (
-          <Text className="text-lg font-semibold mb-2">Name: {name}</Text>
-        )}
-      </TouchableOpacity>
+            <View className="mt-6 w-full">
+              <Text className="text-sm text-gray-500">Full Name</Text>
+              {isEditingName ? (
+                <TextInput
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    setIsChanged(true);
+                  }}
+                  className="border-b border-gray-300 pb-1 mt-1 text-lg"
+                  autoFocus
+                />
+              ) : (
+                <TouchableOpacity onPress={() => setIsEditingName(true)}>
+                  <Text className="text-lg text-gray-800">{name}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-      <TouchableOpacity onPress={() => setIsEditingEmail(true)}>
-        {isEditingEmail ? (
-          <TextInput
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setIsChanged(true);
-            }}
-            className="text-lg text-gray-700 mb-4 border-b border-gray-400 w-64 text-center"
-            autoFocus
-            keyboardType="email-address"
-          />
-        ) : (
-          <Text className="text-lg text-gray-700 mb-4">Email: {email}</Text>
-        )}
-      </TouchableOpacity>
+            <View className="mt-4 w-full">
+              <Text className="text-sm text-gray-500">Email</Text>
+              {isEditingEmail ? (
+                <TextInput
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setIsChanged(true);
+                  }}
+                  className="border-b border-gray-300 pb-1 mt-1 text-lg"
+                  autoFocus
+                  keyboardType="email-address"
+                />
+              ) : (
+                <TouchableOpacity onPress={() => setIsEditingEmail(true)}>
+                  <Text className="text-lg text-gray-800">{email}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-      {isChanged && (
-        <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-full mb-4"
-          onPress={handleUpdate}
-        >
-          <Text className="text-white font-semibold">Update My Profile</Text>
-        </TouchableOpacity>
-      )}
+            {isChanged && (
+              <TouchableOpacity
+                className="bg-blue-600 mt-6 px-6 py-3 rounded-full"
+                onPress={handleUpdate}
+              >
+                <Text className="text-white font-semibold text-base">
+                  Save Changes
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-      <TouchableOpacity onPress={handleSignOut}>
-        <Text className="text-red-500 text-base">Sign Out</Text>
-      </TouchableOpacity>
+          {/* Password Update */}
+          <View className="bg-white rounded-2xl shadow-md p-6 mt-8">
+            <Text className="text-xl font-semibold text-gray-700 mb-4">
+              Change Password
+            </Text>
 
-      <View className="mt-6">
-        <Text className="font-semibold mb-2">Update Password</Text>
-        <TextInput
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          placeholder="Current Password"
-          className="mb-2 p-2 border-b border-gray-400 w-64"
-        />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="New Password"
-          className="mb-2 p-2 border-b border-gray-400 w-64"
-        />
-        <TouchableOpacity
-          className={`px-4 py-2 rounded-full ${
-            isLoading ? "bg-gray-400" : "bg-blue-500"
-          }`}
-          disabled={isLoading}
-          onPress={handleUpdatePassword}
-        >
-          <Text className="text-white font-semibold">
-            {isLoading ? "Updating..." : "Update Password"}{" "}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <TextInput
+              placeholder="Current Password"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              className="border-b border-gray-300 mb-4 p-2"
+            />
+            <TextInput
+              placeholder="New Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              className="border-b border-gray-300 mb-4 p-2"
+            />
 
-      <View className="mt-6 w-full items-center">
-        <Text>Danger Zone</Text>
-        <TouchableOpacity
-          className="bg-red-500 px-4 py-2 rounded-full mb-4 mt-2"
-          onPress={() =>
-            Alert.alert(
-              "Delete Account",
-              "Are you sure you want to delete your account?",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete",
-                  onPress: async () => {
-                    try {
-                      await deleteProfile();
-                      Alert.alert(
-                        "Account Deleted",
-                        "Your account has been deleted."
-                      );
-                      handleSignOut();
-                    } catch (error) {
-                      console.error("Error deleting account:", error);
-                      Alert.alert(
-                        "Error",
-                        "Something went wrong while deleting account."
-                      );
-                    }
-                  },
-                  style: "destructive",
-                },
-              ]
-            )
-          }
-        >
-          <Text className="text-white font-semibold">Delete Account</Text>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              className={`px-6 py-3 rounded-full ${
+                isLoading ? "bg-gray-400" : "bg-black"
+              }`}
+              onPress={handleUpdatePassword}
+              disabled={isLoading}
+            >
+              <Text className="text-white text-center font-semibold">
+                {isLoading ? "Updating..." : "Update Password"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Danger Zone */}
+          <View className="bg-white rounded-2xl shadow-md p-6 mt-8 mb-8 border border-red-400">
+            <Text className="text-xl font-semibold text-red-500 mb-4">
+              Danger Zone
+            </Text>
+
+            <TouchableOpacity
+              className="bg-red-500 px-6 py-3 rounded-full"
+              onPress={() =>
+                Alert.alert(
+                  "Delete Account",
+                  "Are you sure you want to delete your account?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      onPress: async () => {
+                        try {
+                          await deleteProfile();
+                          Alert.alert(
+                            "Account Deleted",
+                            "Your account has been deleted."
+                          );
+                          handleSignOut();
+                        } catch (error) {
+                          Alert.alert(
+                            "Error",
+                            "Something went wrong while deleting account."
+                          );
+                        }
+                      },
+                      style: "destructive",
+                    },
+                  ]
+                )
+              }
+            >
+              <Text className="text-white text-center font-semibold">
+                Delete My Account
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity onPress={handleSignOut}>
+            <Text className="text-center text-red-500 font-semibold">
+              Sign Out
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

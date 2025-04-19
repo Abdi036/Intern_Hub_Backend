@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
+const upload = require("../middleware/pdfUploadMiddleware");
 const {
   PostInternship,
   GetAllMycompanyInternships,
@@ -16,7 +17,6 @@ const {
   GetApplicant,
   UpdateApplicationStatus,
 } = require("../controllers/internController");
-const { upload: pdfUpload } = require("../middleware/pdfUploadMiddleware");
 
 const router = express.Router();
 
@@ -47,7 +47,7 @@ router.get("/:id", restrictTo("student", "admin"), GetInternshipById);
 router.post(
   "/:internshipId/apply",
   restrictTo("student"),
-  pdfUpload.single("coverLetter"),
+  upload.single("file"),
   ApplyInternship
 );
 router.get("/:internshipId/application", restrictTo("student"), GetApplication);

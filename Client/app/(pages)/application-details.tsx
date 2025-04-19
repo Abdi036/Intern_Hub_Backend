@@ -1,9 +1,10 @@
-import { Text, View, Linking, TouchableOpacity } from "react-native";
+import { Text, View, Linking, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import moment from "moment";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ApplicationDetails() {
   const { ApplicationDetail, DeleteApplication } = useAuth();
@@ -48,15 +49,37 @@ export default function ApplicationDetails() {
   }
 
   const handleDeleteApplication = async () => {
-    try {
-      await DeleteApplication(applicationId);
-      router.back();
-    } catch (error) {
-      console.error("Error deleting application:", error);
-    }
+    Alert.alert(
+      "Delete Application",
+      "Are you sure you want to delete this application? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await DeleteApplication(applicationId);
+              router.replace({
+                pathname: "../(tabs)/applications",
+                params: { refresh: Date.now().toString() },
+              });
+            } catch (error) {
+              console.error("Error deleting application:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete application. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
-  // Destructuring application details
   const { internship, application: appDetails } = application;
   const {
     title,
@@ -81,84 +104,101 @@ export default function ApplicationDetails() {
     appliedAt: string;
   } = appDetails;
 
+  const statusColor =
+    status === "pending"
+      ? "bg-yellow-100 text-yellow-800"
+      : status === "accepted"
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 p-4">
-      <Text className="text-2xl font-bold mb-4">{title}</Text>
-      <Text className="text-lg font-semibold text-gray-800 mb-2">
-        {companyName}
-      </Text>
-      <Text className="text-gray-600 mb-2">{department}</Text>
+    <SafeAreaView className="flex-1 bg-gray-100 p-4">
+      <View className="bg-white p-5 rounded-2xl shadow mb-4">
+        <Text className="text-2xl font-bold text-blue-600 mb-1">{title}</Text>
+        <Text className="text-lg font-semibold text-gray-800 mb-1">
+          {companyName}
+        </Text>
+        <Text className="text-gray-500 mb-2">{department}</Text>
 
-      <Text className="text-gray-500 mb-2">
-        Location: {location} {remote && "(Remote)"}
-      </Text>
-      <Text className="text-gray-500 mb-2">Paid: {paid ? "Yes" : "No"}</Text>
-      <Text className="text-gray-500 mb-2">
-        Internship Dates: {moment(startDate).format("MMM DD, YYYY")} -{" "}
-        {moment(endDate).format("MMM DD, YYYY")}
-      </Text>
-      <Text className="text-gray-500 mb-2">
-        Application Deadline:{" "}
-        {moment(applicationDeadline).format("MMM DD, YYYY")}
-      </Text>
+        <View className="border-t border-gray-200 mt-3 pt-3">
+          <Text className="text-gray-600 mb-1">
+            📍 Location: {location} {remote && "(Remote)"}
+          </Text>
+          <Text className="text-gray-600 mb-1">
+            💰 Paid: {paid ? "Yes" : "No"}
+          </Text>
+          <Text className="text-gray-600 mb-1">
+            📅 Dates: {moment(startDate).format("MMM DD, YYYY")} -{" "}
+            {moment(endDate).format("MMM DD, YYYY")}
+          </Text>
+          <Text className="text-gray-600">
+            ⏳ Deadline: {moment(applicationDeadline).format("MMM DD, YYYY")}
+          </Text>
+        </View>
+      </View>
 
-      <Text className="text-lg font-semibold text-gray-800 mt-4">
-        Application Status
-      </Text>
-      <Text
-        className={`text-sm font-medium ${
-          status === "pending"
-            ? "text-yellow-600"
-            : status === "accepted"
-            ? "text-green-600"
-            : "text-red-600"
-        }`}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Text>
+      <View className="bg-white p-5 rounded-2xl shadow mb-4">
+        <Text className="text-lg font-semibold text-gray-800 mb-3">
+          Application Info
+        </Text>
 
-      <Text className="text-gray-500 mb-4">
-        Applied on: {moment(appliedAt).format("MMM DD, YYYY [at] hh:mm A")}
-      </Text>
+        <View className="flex-row items-center mb-2">
+          <Text
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColor}`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Text>
+        </View>
+        <Text className="text-sm text-gray-500 mb-3">
+          📥 Applied: {moment(appliedAt).format("MMM DD, YYYY [at] hh:mm A")}
+        </Text>
 
-      <Text className="text-lg font-semibold text-gray-800 mt-4">
-        Portfolio
-      </Text>
-      {portfolio ? (
-        <TouchableOpacity onPress={() => Linking.openURL(portfolio)}>
-          <Text className="text-blue-500 underline">{portfolio}</Text>
-        </TouchableOpacity>
-      ) : (
-        <Text className="text-gray-500">No portfolio provided.</Text>
-      )}
+        <Text className="text-base font-medium text-gray-700">
+          📎 Portfolio
+        </Text>
+        {portfolio ? (
+          <TouchableOpacity onPress={() => Linking.openURL(portfolio)}>
+            <Text className="text-blue-500 underline mb-3">{portfolio}</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text className="text-gray-400 mb-3">No portfolio provided.</Text>
+        )}
 
-      <Text className="text-lg font-semibold text-gray-800 mt-4">
-        Cover Letter
-      </Text>
-      {coverLetter ? (
+        <Text className="text-base font-medium text-gray-700">
+          📄 Cover Letter
+        </Text>
+        {coverLetter ? (
+          <TouchableOpacity
+            onPress={() =>
+              Linking.openURL(`https://example.com/${coverLetter}`)
+            }
+          >
+            <Text className="text-blue-500 underline">{coverLetter}</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text className="text-gray-400">No cover letter provided.</Text>
+        )}
+      </View>
+
+      <View className="flex gap-y-3">
         <TouchableOpacity
-          onPress={() => Linking.openURL(`https://example.com/${coverLetter}`)}
+          className="flex-row items-center justify-center bg-red-500 p-4 rounded-xl"
+          onPress={handleDeleteApplication}
         >
-          <Text className="text-blue-500 underline">{coverLetter}</Text>
-        </TouchableOpacity>
-      ) : (
-        <Text className="text-gray-500">No cover letter provided.</Text>
-      )}
-
-      <View>
-        <TouchableOpacity
-          className="bg-red-500 p-4 rounded-lg mx-5 mb-5 items-center mt-7"
-          onPress={() => handleDeleteApplication()}
-        >
-          <Text className="text-gray-800 text-base font-medium">
+          <Ionicons name="trash-outline" size={20} color="white" />
+          <Text className="text-white text-base font-semibold ml-2">
             Delete Application
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          className="bg-gray-300 p-4 rounded-lg mx-5 mb-5 items-center mt-2"
+          className="flex-row items-center justify-center bg-gray-300 p-4 rounded-xl"
           onPress={() => router.back()}
         >
-          <Text className="text-gray-800 text-base font-medium">Go Back</Text>
+          <Ionicons name="arrow-back-outline" size={20} color="#1F2937" />
+          <Text className="text-gray-800 text-base font-medium ml-2">
+            Go Back
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

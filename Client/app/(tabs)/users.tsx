@@ -5,13 +5,13 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 
-// Define types for the user data
 interface User {
   _id: string;
   name: string;
@@ -20,7 +20,8 @@ interface User {
   role: string;
 }
 
-const URL = "https://intern-hub-server.onrender.com";
+const URL = "http://10.240.163.59:3000";
+
 export default function Users() {
   const { error, isLoading, ViewUsers, DeleteUsers } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -37,19 +38,39 @@ export default function Users() {
       };
 
       fetchUsers();
-
       return () => {};
     }, [])
   );
 
   async function handleDeleteUser(userId: string) {
-    await DeleteUsers(userId);
-    setUsers((prev) => prev.filter((user) => user._id !== userId));
+    Alert.alert(
+      "Delete User",
+      "Are you sure you want to delete this user? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await DeleteUsers(userId);
+              setUsers((prev) => prev.filter((user) => user._id !== userId));
+            } catch (error) {
+              console.error("Error deleting user:", error);
+              Alert.alert("Error", "Failed to delete user. Please try again.");
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (isLoading) {
     return (
-      <View className="flex justify-center items-center h-full">
+      <View className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#2563EB" />
         <Text className="text-gray-500 mt-4">Loading users...</Text>
       </View>
@@ -58,54 +79,67 @@ export default function Users() {
 
   if (error) {
     return (
-      <View className="flex justify-center items-center h-full">
+      <View className="flex-1 justify-center items-center bg-white">
         <Text className="text-center text-red-500">{error}</Text>
       </View>
     );
   }
 
+  const renderItem = ({ item }: { item: User }) => (
+    <View className="bg-white p-5 mb-4 mx-4 rounded-2xl shadow-md border border-gray-100">
+      <View className="flex-row items-center mb-4">
+        <Image
+          source={{ uri: `${URL}/images/users/${item.photo}` }}
+          className="w-16 h-16 rounded-full border-2 border-blue-500 mr-4"
+        />
+        <View className="flex-1">
+          <Text className="text-xl font-bold text-gray-800">{item.name}</Text>
+          <Text className="text-gray-600 text-sm">{item.email}</Text>
+          <Text
+            className={`mt-1 text-xs px-2 py-1 rounded-full w-fit ${
+              item.role === "admin"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-green-100 text-green-700"
+            }`}
+          >
+            {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
+          </Text>
+        </View>
+      </View>
+
+      {item.role !== "admin" && (
+        <TouchableOpacity
+          className="bg-red-500 rounded-full py-2 px-6 self-end"
+          onPress={() => handleDeleteUser(item._id)}
+        >
+          <Text className="text-white font-medium">Delete</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 ">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <FlatList
         data={users}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View className="bg-white p-4 mb-2 rounded-lg shadow">
-            <View
-              className={`flex-row items-center ${
-                item.role !== "admin" ? "justify-between" : ""
-              } mb-2`}
-            >
-              <Image
-                source={{
-                  uri: `${URL}/images/users/${item.photo}`,
-                }}
-                className="w-12 h-12 rounded-full mr-4 border border-slate-500"
-              />
-              {item.role !== "admin" && (
-                <TouchableOpacity
-                  className="bg-red-500 p-4 rounded-lg mt-4"
-                  onPress={() => handleDeleteUser(item._id)}
-                >
-                  <Text className="text-white font-bold">Delete</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <Text className="text-lg font-semibold">{item.name}</Text>
-            <Text className="text-gray-600">Email: {item.email}</Text>
-            <Text className="text-gray-600">Role: {item.role}</Text>
-          </View>
-        )}
+        keyExtractor={(item) => item._id}
+        renderItem={renderItem}
         ListHeaderComponent={() => (
-          <View className="p-4">
-            <Text className="text-2xl font-bold text-blue-500 mb-4">
-              Users Page
+          <View className="p-6">
+            <Text className="text-3xl font-bold text-blue-600">
+              User Management
+            </Text>
+            <Text className="text-gray-500 mt-1">
+              Manage your platform users
             </Text>
             {users.length === 0 && (
-              <Text className="text-gray-500 text-center">No users found</Text>
+              <Text className="text-gray-500 text-center mt-4">
+                No users found.
+              </Text>
             )}
           </View>
         )}
+        contentContainerStyle={{ paddingBottom: 50 }}
       />
     </SafeAreaView>
   );

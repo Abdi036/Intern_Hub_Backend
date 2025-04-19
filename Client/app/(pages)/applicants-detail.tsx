@@ -26,7 +26,7 @@ interface ApplicantDetail {
   };
 }
 
-const URL = "https://intern-hub-server.onrender.com";
+const URL = "http://10.240.163.59:3000";
 
 function ApplicantDetailScreen() {
   const router = useRouter();
