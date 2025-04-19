@@ -346,9 +346,6 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     folder: "cover-letters",
   });
 
-  // 6) Remove local file
-  fs.unlinkSync(tempPath);
-
   // 7) Create application with cloud URL
   const application = await Application.create({
     internshipId: req.params.internshipId,
