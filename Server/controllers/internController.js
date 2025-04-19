@@ -337,18 +337,38 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
   }
 
   // 4) Temporarily save uploaded buffer to disk
-  const tempPath = path.join(__dirname, "../uploads", req.file.originalname);
-  fs.writeFileSync(tempPath, req.file.buffer);
+  // const tempPath = path.join(__dirname, "../uploads", req.file.originalname);
+  // fs.writeFileSync(tempPath, req.file.buffer);
 
+  // if (!fs.existsSync(uploadsDir)) {
+  //   fs.mkdirSync(uploadsDir, { recursive: true });
+  // }
+
+  // // 5) Upload to Cloudinary
+  // const result = await cloudinary.uploader.upload(tempPath, {
+  //   resource_type: "raw",
+  //   folder: "cover-letters",
+  // });
+
+  const uploadsDir = path.join(__dirname, "../uploads");
+
+  // 1. Ensure uploads folder exists
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // 5) Upload to Cloudinary
+  // 2. Save file to disk
+  const tempPath = path.join(uploadsDir, req.file.originalname);
+  fs.writeFileSync(tempPath, req.file.buffer);
+
+  // 3. Upload to Cloudinary
   const result = await cloudinary.uploader.upload(tempPath, {
     resource_type: "raw",
     folder: "cover-letters",
   });
+
+  // 4. Clean up temp file
+  fs.unlinkSync(tempPath);
 
   // 7) Create application with cloud URL
   const application = await Application.create({
