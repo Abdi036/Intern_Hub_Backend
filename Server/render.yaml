@@ -6,7 +6,9 @@ services:
     startCommand: node server.js
     envVars:
       - key: PORT
-        value: 10000
+        value: 3000
+      - key: NODE_ENV
+        value: development
       - key: REMOTE_MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -14,4 +16,10 @@ services:
       - key: EMAIL_USERNAME
         sync: false
       - key: EMAIL_PASSWORD
+        sync: false
+      - key: CLOUD_NAME
+        sync: false
+      - key: CLOUD_API_KEY
+        sync: false
+      - key: CLOUD_API_SECRET
         sync: false
