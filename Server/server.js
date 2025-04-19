@@ -27,10 +27,7 @@ mongoose
 
 // Routes
 app.use("/images/users", express.static("public/images/users"));
-app.use(
-  "/documents/cover-letters",
-  express.static("public/documents/cover-letters")
-);
+
 app.use("/api/v1/user", authRoute);
 app.use("/api/v1/internships", InternsRoute);
 app.use("/api/v1/admin", adminRoute);
