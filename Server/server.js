@@ -1,9 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const cors = require("cors");
-const setupDefaultImage = require("./utils/setupDefaultImage");
+const dotenv = require("dotenv");
 
+const xss = require("xss-clean");
+const mongoSanitize = require("express-mongo-sanitize");
+const rateLimit = require("express-rate-limit");
+
+const setupDefaultImage = require("./utils/setupDefaultImage");
 const authRoute = require("./routes/authRoute");
 const InternsRoute = require("./routes/InternshipRoute");
 const adminRoute = require("./routes/adminRoute");
@@ -12,9 +16,21 @@ const errorMiddleware = require("./middleware/errorMiddleware");
 dotenv.config();
 const app = express();
 
+// Data sanitization against XSS attacks
+app.use(limiter);
+app.use(xss());
+app.use(mongoSanitize());
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later.",
+});
+app.use(limiter);
 
 // Setup default image
 setupDefaultImage();
