@@ -675,6 +675,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await handleApiError(response);
       }
 
+      // Handle 204 No Content response
+      if (response.status === 204) {
+        return { message: "Internship deleted successfully" };
+      }
+
       const data = await response.json();
       return data;
     } catch (err: any) {

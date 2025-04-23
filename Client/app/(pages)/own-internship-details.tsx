@@ -6,11 +6,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 
 interface Internship {
   _id: string;
@@ -27,7 +28,7 @@ interface Internship {
   numPositions: number;
   applicationDeadline: string;
   companyId: string;
-  applicants: any[];
+  applicants: Array<any>;
   createdAt: string;
 }
 
@@ -37,14 +38,13 @@ export default function OwninternshipDetails() {
     ViewMyPostedInternship,
     DeleteMyPostedInternship,
     EditMyPostedInternship,
-    GetAllApplicants,
   } = useAuth();
 
   const [internship, setInternship] = useState<Internship | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [isApplicantEmpty, setIsApplicantEmpty] = useState(false);
+
   const [editedInternship, setEditedInternship] = useState<Partial<Internship>>(
     {}
   );
@@ -71,21 +71,35 @@ export default function OwninternshipDetails() {
   }, [id]);
 
   async function handleDeleteInternship() {
-    try {
-      await DeleteMyPostedInternship(id as string);
-      router.replace({
-        pathname: "../(tabs)/internship",
-        params: { refresh: Date.now().toString() },
-      });
-    } catch (err: any) {
-      console.error("Error deleting internship:", err);
-      setError(err.message || "Failed to delete internship");
-    }
+    Alert.alert(
+      "Delete Internship",
+      "Are you sure you want to delete this internship? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await DeleteMyPostedInternship(id as string);
+              router.replace({
+                pathname: "../(tabs)/internship",
+                params: { refresh: Date.now().toString() },
+              });
+            } catch (err: any) {
+              console.error("Error deleting internship:", err);
+              setError(err.message || "Failed to delete internship");
+            }
+          },
+        },
+      ]
+    );
   }
 
   async function handleViewApplicants() {
-    const applicants = await GetAllApplicants(id as string);
-    setIsApplicantEmpty(applicants.length === 0);
     router.push({
       pathname: "../(pages)/applicants",
       params: { id: internship?._id },
@@ -138,8 +152,14 @@ export default function OwninternshipDetails() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
+      <View className="flex-row gap-2 items-center p-4 bg-white border-b border-gray-200">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text className="text-2xl font-bold">InternShip Details</Text>
+      </View>
       <ScrollView className="flex-1 bg-gray-100 ">
-        <View className="flex bg-white justify-between relative pt-10">
+        <View className="flex bg-white justify-between relative pt-3">
           <View className="bg-white p-5 mb-2 border-b border-gray-200">
             <Text className="text-2xl font-bold mb-1">
               {internship.CompanyName}
@@ -280,33 +300,43 @@ export default function OwninternshipDetails() {
           </View>
         )}
 
-        {/* Back and Delete Buttons */}
         <TouchableOpacity
-          className="absolute top-5 left-5"
-          onPress={() => router.back()}
+          className={`flex-row justify-center items-center p-4 rounded-lg mx-5 mb-5 ${
+            internship.applicants.length < 1 ? "bg-gray-400" : "bg-gray-200"
+          }`}
+          disabled={internship.applicants.length <= 0}
+          onPress={() => handleViewApplicants()}
         >
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <Feather
+            name="eye"
+            size={24}
+            color={internship.applicants.length < 1 ? "gray" : "blue"}
+          />
+          <Text
+            className={`text-base font-medium ml-2 ${
+              internship.applicants.length < 1
+                ? "text-gray-500"
+                : "text-gray-800"
+            }`}
+          >
+            {internship.applicants.length >= 1
+              ? "View Applicants"
+              : "No applicants yet"}
+          </Text>
         </TouchableOpacity>
 
+        {/* Back and Delete Buttons */}
+
         <TouchableOpacity
-          className={`p-4 rounded-lg mx-5 mb-5 items-center ${
+          className={`flex-row justify-center items-center p-4 rounded-lg mx-5 mb-5 ${
             loading ? "bg-gray-400" : "bg-red-500"
           }`}
           onPress={handleDeleteInternship}
           disabled={loading}
         >
-          <Text className="text-white text-base font-medium">
+          <MaterialIcons name="delete" size={24} color="white" />
+          <Text className="text-white text-base font-medium ml-2">
             {loading ? "Deleting..." : "Delete Internship"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="bg-gray-300 p-4 rounded-lg mx-5 mb-5 items-center"
-          disabled={isApplicantEmpty}
-          onPress={() => handleViewApplicants()}
-        >
-          <Text className="text-gray-800 text-base font-medium">
-            {isApplicantEmpty ? "No applicants yet" : "View Applicants"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

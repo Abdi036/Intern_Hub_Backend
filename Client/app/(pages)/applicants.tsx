@@ -80,11 +80,12 @@ export default function Applicants() {
 
   async function handleApplicantDetail(
     studentId: string,
-    applicationId: string
+    applicationId: string,
+    status: string
   ) {
     router.push({
       pathname: "/(pages)/applicants-detail",
-      params: { studentId, id, applicationId },
+      params: { studentId, id, applicationId, applicationStatus: status },
     });
   }
 
@@ -103,7 +104,11 @@ export default function Applicants() {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
-              handleApplicantDetail(item.studentId, item.applicationId)
+              handleApplicantDetail(
+                item.studentId,
+                item.applicationId,
+                item.status
+              )
             }
             className="bg-white p-4 mb-2 mx-4 rounded-lg shadow-sm"
           >

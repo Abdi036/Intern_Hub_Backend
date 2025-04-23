@@ -26,12 +26,13 @@ interface ApplicantDetail {
   };
 }
 
-const URL = "https://intern-hub-server.onrender.com";
+// const URL = "https://intern-hub-server.onrender.com";
 
 function ApplicantDetailScreen() {
   const router = useRouter();
   const { GetApplicantDetail, UpdateApplicationStatus } = useAuth();
-  const { studentId, id, applicationId } = useLocalSearchParams();
+  const { studentId, id, applicationId, applicationStatus } =
+    useLocalSearchParams();
   const [applicant, setApplicant] = useState<ApplicantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,66 +93,24 @@ function ApplicantDetailScreen() {
 
     try {
       setDownloading(true);
-      // Use the correct URL path for cover letters
-      const pdfUrl = `${URL}/documents/cover-letters/${applicant.application.coverLetter}`;
+      const pdfUrl = applicant.application.coverLetter;
 
-      // First check if the file exists
-      try {
-        const response = await fetch(pdfUrl);
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
-        }
-      } catch (error) {
-        Alert.alert(
-          "File Not Found",
-          "The cover letter file could not be found on the server. Please contact the applicant for their cover letter."
-        );
-        return;
-      }
+      // Check if the URL can be opened
+      const supported = await Linking.canOpenURL(pdfUrl);
 
-      // Create a temporary file path using the same filename
-      const fileUri = `${FileSystem.cacheDirectory}${applicant.application.coverLetter}`;
-
-      // Download the PDF file
-      const downloadResult = await FileSystem.downloadAsync(pdfUrl, fileUri, {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      if (downloadResult.status === 200) {
-        // Check if sharing is available
-        const isAvailable = await Sharing.isAvailableAsync();
-
-        if (isAvailable) {
-          // Share the file
-          await Sharing.shareAsync(fileUri, {
-            mimeType: "application/pdf",
-            dialogTitle: `${applicant.name}'s Cover Letter`,
-          });
-        } else {
-          // If sharing is not available, try to open with system viewer
-          const supported = await Linking.canOpenURL(fileUri);
-          if (supported) {
-            await Linking.openURL(fileUri);
-          } else {
-            Alert.alert(
-              "Error",
-              "Unable to open the PDF file. Please make sure you have a PDF viewer installed."
-            );
-          }
-        }
+      if (supported) {
+        await Linking.openURL(pdfUrl);
       } else {
-        throw new Error(
-          `Download failed with status: ${downloadResult.status}`
+        Alert.alert(
+          "Error",
+          "Unable to open the PDF file. Please make sure you have a PDF viewer installed."
         );
       }
     } catch (error: any) {
-      console.error("Error handling cover letter:", error);
+      console.error("Error opening cover letter:", error);
       Alert.alert(
         "Error",
-        error.message ||
-          "Failed to open the cover letter. Please try again later."
+        "Failed to open the cover letter. Please try again later."
       );
     } finally {
       setDownloading(false);
@@ -159,20 +118,38 @@ function ApplicantDetailScreen() {
   };
 
   const handleUpdateStatus = async (status: string) => {
-    try {
-      await UpdateApplicationStatus(applicationId as string, status);
-
-      Alert.alert("Success", `Application ${status} successfully!`, [
+    Alert.alert(
+      `Confirm ${status === "accepted" ? "Acceptance" : "Rejection"}`,
+      `Are you sure you want to ${status.slice(0, 6)} this applicant?`,
+      [
         {
-          text: "OK",
-          onPress: () => router.back(),
+          text: "Cancel",
+          style: "cancel",
         },
-      ]);
-    } catch (error: any) {
-      Alert.alert(error.message);
-    } finally {
-      setUpdating(true);
-    }
+        {
+          text: status === "accepted" ? "Accept" : "Reject",
+          style: status === "accepted" ? "default" : "destructive",
+          onPress: async () => {
+            try {
+              setUpdating(true);
+              await UpdateApplicationStatus(applicationId as string, status);
+              Alert.alert("Success", `Application ${status} successfully!`, [
+                {
+                  text: "OK",
+                  onPress: () => router.back(),
+                },
+              ]);
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                error.message || "Failed to update application status"
+              );
+              setUpdating(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -277,27 +254,37 @@ function ApplicantDetailScreen() {
           <View className="flex-row justify-between px-4 mb-6 mt-2 gap-4">
             <TouchableOpacity
               onPress={() => handleUpdateStatus("accepted")}
-              className={`${
-                updating ? "bg-gray-400" : ""
-              } bg-green-500 px-6 py-3 rounded-lg flex-1 ml-2`}
-              disabled={updating}
+              className={`px-6 py-3 rounded-lg flex-1 ml-2 ${
+                updating || applicationStatus !== "pending"
+                  ? "bg-gray-400"
+                  : "bg-black"
+              }`}
+              disabled={updating || applicationStatus !== "pending"}
             >
               <Text className="text-white font-semibold text-center">
-                Accept
+                {updating ? "Processing..." : "Accept"}
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => handleUpdateStatus("rejected")}
-              className={`${
-                updating ? "bg-gray-400" : ""
-              } bg-red-500 px-6 py-3 rounded-lg flex-1 mr-2`}
-              disabled={updating}
+              className={`px-6 py-3 rounded-lg flex-1 mr-2 ${
+                updating || applicationStatus !== "pending"
+                  ? "bg-gray-400"
+                  : "bg-black"
+              }`}
+              disabled={updating || applicationStatus !== "pending"}
             >
               <Text className="text-white font-semibold text-center">
-                Reject
+                {updating ? "Processing..." : "Reject"}
               </Text>
             </TouchableOpacity>
           </View>
+          {applicationStatus !== "pending" && (
+            <Text className="text-sm text-gray-500 text-center mt-2">
+              This application has already been {applicationStatus}.
+            </Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
