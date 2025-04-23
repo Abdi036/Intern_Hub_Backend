@@ -22,7 +22,7 @@ interface Applicant {
   appliedAt: string;
 }
 
-const URL = "http://10.240.163.59:3000";
+const URL = "https://intern-hub-server.onrender.com";
 
 export default function Applicants() {
   const { GetAllApplicants } = useAuth();

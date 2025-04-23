@@ -361,7 +361,7 @@ exports.ApplyInternship = catchAsync(async (req, res, next) => {
     internshipId: req.params.internshipId,
     studentId: req.user._id,
     coverLetter: result.secure_url,
-    portfolio: req.body.portfolio || null,
+    portfolio: req.body.portfolio?.trim() || undefined,
     status: "pending",
   });
 

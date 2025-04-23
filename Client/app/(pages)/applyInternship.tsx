@@ -51,24 +51,40 @@ export default function ApplyInternship() {
     try {
       setIsLoading(true);
       const formData = new FormData();
-      formData.append("coverLetter", {
+
+      // Append the cover letter file
+      formData.append("file", {
         uri: coverLetter.uri,
-        name: coverLetter.name,
+        name: coverLetter.name || "coverletter.pdf",
         type: "application/pdf",
       } as any);
 
-      if (portfolioLink.trim() !== "") {
-        formData.append("portfolio", portfolioLink);
+      // Only append portfolio if it's not empty
+      if (portfolioLink && portfolioLink.trim() !== "") {
+        formData.append("portfolio", portfolioLink.trim());
       }
 
       const response = await ApplyInternship(internshipId as string, formData);
+
       if (response) {
-        router.replace({
-          pathname: "/(tabs)/applications",
-          params: { refresh: Date.now().toString() },
-        });
+        Alert.alert(
+          "Success",
+          "Your application has been submitted successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.replace({
+                  pathname: "/(tabs)/applications",
+                  params: { refresh: Date.now().toString() },
+                });
+              },
+            },
+          ]
+        );
       }
     } catch (error: any) {
+      console.error("Application Error:", error);
       setError(
         error.message || "Failed to submit application. Please try again."
       );
@@ -156,6 +172,7 @@ export default function ApplyInternship() {
         <TouchableOpacity
           className="p-4 rounded-xl items-center bg-white border border-gray-300"
           onPress={handleCancel}
+          disabled={isLoading}
         >
           <Text className="text-red-500 font-medium text-base">Cancel</Text>
         </TouchableOpacity>

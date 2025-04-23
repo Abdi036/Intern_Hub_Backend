@@ -63,8 +63,6 @@ export default function InternshipDetails() {
     fetchInternshipDetails();
   }, [id]);
 
-  console.log(internship);
-
   const hasApplied = internship?.applicants?.some(
     (applicant: any) => applicant === user?.data?._id
   );
@@ -73,7 +71,22 @@ export default function InternshipDetails() {
     if (hasApplied) {
       Alert.alert(
         "Already Applied",
-        "You have already applied for this internship"
+        "You have already applied for this internship. Would you like to view your application?",
+        [
+          {
+            text: "View Application",
+            onPress: () => {
+              router.push({
+                pathname: "../(pages)/application-details",
+                params: { id: id },
+              });
+            },
+          },
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+        ]
       );
       return;
     }

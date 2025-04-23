@@ -168,11 +168,7 @@ export default function ApplicationDetails() {
           📄 Cover Letter
         </Text>
         {coverLetter ? (
-          <TouchableOpacity
-            onPress={() =>
-              Linking.openURL(`https://example.com/${coverLetter}`)
-            }
-          >
+          <TouchableOpacity onPress={() => Linking.openURL(`${coverLetter}`)}>
             <Text className="text-blue-500 underline">{coverLetter}</Text>
           </TouchableOpacity>
         ) : (

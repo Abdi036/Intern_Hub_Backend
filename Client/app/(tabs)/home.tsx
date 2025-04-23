@@ -30,11 +30,15 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [filters, setFilters] = useState({
+    remote: false,
+    paid: false,
+  });
 
   useFocusEffect(
     useCallback(() => {
-      fetchInternships(page);
-    }, [])
+      fetchInternships(1);
+    }, [filters])
   );
 
   const fetchInternships = async (pageToFetch: number) => {
@@ -42,7 +46,16 @@ export default function Home() {
       if (pageToFetch === 1) setLoading(true);
       else setIsFetchingMore(true);
 
-      const data = await ViewAllInternships(pageToFetch);
+      const queryParams = new URLSearchParams({
+        page: pageToFetch.toString(),
+        ...(filters.remote && { remote: "true" }),
+        ...(filters.paid && { paid: "true" }),
+      });
+
+      const data = await ViewAllInternships(
+        pageToFetch,
+        queryParams.toString()
+      );
       const newInternships = data.data.internships || [];
 
       setInternships((prev) =>
@@ -72,6 +85,22 @@ export default function Home() {
       pathname: "../(pages)/internship-details",
       params: { id: internship._id },
     });
+  };
+
+  const toggleFilter = (filterType: "remote" | "paid") => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: !prev[filterType],
+    }));
+    setPage(1);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      remote: false,
+      paid: false,
+    });
+    setPage(1);
   };
 
   if (loading && page === 1) {
@@ -145,12 +174,32 @@ export default function Home() {
             </Text>
 
             {/* Filter Section */}
-            <View className="flex-row mt-5 space-x-4 items-center">
+            <View className="flex-row mt-5 space-x-4 items-center gap-2">
               <Text className="font-semibold text-gray-700">Filter By:</Text>
-              <TouchableOpacity className="bg-indigo-500 px-4 py-2 rounded-full">
+              <TouchableOpacity
+                onPress={resetFilters}
+                className={`px-4 py-2 rounded-full ${
+                  !filters.remote && !filters.paid
+                    ? "bg-indigo-600"
+                    : "bg-indigo-300"
+                }`}
+              >
+                <Text className="text-white font-medium">All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => toggleFilter("remote")}
+                className={`px-4 py-2 rounded-full ${
+                  filters.remote ? "bg-indigo-600" : "bg-indigo-300"
+                }`}
+              >
                 <Text className="text-white font-medium">Remote</Text>
               </TouchableOpacity>
-              <TouchableOpacity className="bg-indigo-500 px-4 py-2 rounded-full">
+              <TouchableOpacity
+                onPress={() => toggleFilter("paid")}
+                className={`px-4 py-2 rounded-full ${
+                  filters.paid ? "bg-indigo-600" : "bg-indigo-300"
+                }`}
+              >
                 <Text className="text-white font-medium">Paid</Text>
               </TouchableOpacity>
             </View>

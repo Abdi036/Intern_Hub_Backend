@@ -66,7 +66,7 @@ interface AuthContextType {
   updateProfile: (formData: FormData) => Promise<void>;
   UpdatePassword: (currentPassword: string, password: string) => Promise<void>;
   deleteProfile: () => Promise<void>;
-  ViewAllInternships: (page?: number) => Promise<any>;
+  ViewAllInternships: (page?: number, queryParams?: string) => Promise<any>;
   ViewInternship: (id: string) => Promise<any>;
   ApplyInternship: (
     internshipId: string,
@@ -92,8 +92,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "http://10.240.163.59:3000/api/v1";
-// const API_URL = "http://localhost:3000/api/v1/api/v1";
+const API_URL = "https://intern-hub-server.onrender.com/api/v1";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
@@ -342,15 +341,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // View all internships
-  const ViewAllInternships = async (page = 1) => {
+  const ViewAllInternships = async (page = 1, queryParams = "") => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${API_URL}/internships?page=${page}`, {
-        headers: {
-          Authorization: `Bearer ${user?.token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/internships?page=${page}${
+          queryParams ? `&${queryParams}` : ""
+        }`,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         await handleApiError(response);
