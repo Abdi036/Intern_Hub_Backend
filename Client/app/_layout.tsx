@@ -1,15 +1,19 @@
 import "../global.css";
-import { Stack } from "expo-router";
 import AuthContextProvider from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
+import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { Stack } from "expo-router";
 
-export default function RootLayout() {
-  return (
-    <AuthContextProvider>
+function RoleBasedLayout() {
+  const { user } = useAuth();
+  const role = user?.data?.role;
+
+  if (!role) {
+    return (
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="(pages)/internship-details"
           options={{ headerShown: false }}
@@ -35,6 +39,16 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
       </Stack>
+    );
+  }
+
+  return <Slot />;
+}
+
+export default function RootLayout() {
+  return (
+    <AuthContextProvider>
+      <RoleBasedLayout />
       <StatusBar backgroundColor="#161622" style="light" />
     </AuthContextProvider>
   );

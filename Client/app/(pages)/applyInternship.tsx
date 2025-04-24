@@ -75,7 +75,7 @@ export default function ApplyInternship() {
               text: "OK",
               onPress: () => {
                 router.replace({
-                  pathname: "/(tabs)/applications",
+                  pathname: "/(student)/applications",
                   params: { refresh: Date.now().toString() },
                 });
               },

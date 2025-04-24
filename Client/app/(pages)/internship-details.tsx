@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TrashIcon } from "react-native-heroicons/outline";
+import { Ionicons } from "@expo/vector-icons";
 
 interface Internship {
   _id: string;
@@ -152,15 +152,6 @@ export default function InternshipDetails() {
           <Text className="text-base text-green-600 font-medium">
             {internship.paid ? "Paid Internship" : "Unpaid Internship"}
           </Text>
-
-          {isAdmin && (
-            <TouchableOpacity
-              className="absolute top-4 right-4"
-              onPress={handleDelete}
-            >
-              <TrashIcon size={28} color="red" />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Description */}
@@ -247,14 +238,25 @@ export default function InternshipDetails() {
 
         {isAdmin && (
           <TouchableOpacity
-            className="bg-gray-400 p-4 rounded-xl mx-2 mb-4 items-center shadow-md"
-            disabled={true}
+            className="bg-red-500 p-4 rounded-xl mx-2 mb-4 items-center flex-row gap-2 justify-center"
+            onPress={() => {
+              Alert.alert(
+                "Delete Internship",
+                "Are you sure you want to delete this internship? This action cannot be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: handleDelete,
+                  },
+                ]
+              );
+            }}
           >
-            <Text className="text-white text-lg font-bold">
+            <Ionicons name="trash-outline" size={20} color="white" />
+            <Text className="text-white text-base font-semibold">
               Delete Internship
-            </Text>
-            <Text className="text-white text-sm mt-1">
-              Delete functionality is not available
             </Text>
           </TouchableOpacity>
         )}

@@ -8,9 +8,7 @@ import { useAuth } from "./context/AuthContext";
 
 export default function App() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-
+  const { user, isLoading } = useAuth();
 
   const handleContinue = () => {
     if (user) {

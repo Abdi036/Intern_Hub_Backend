@@ -38,16 +38,23 @@ export default function Signin() {
         return;
       }
 
-      await signin({
+      const user = await signin({
         email: form.email,
         password: form.password,
       });
 
-      router.replace("/home");
-    } catch (err) {
-      // Error is already handled by AuthContext
-      console.log("Signin error:", err);
-    }
+      const role = user.data.role;
+
+      if (role === "admin") {
+        router.replace("/(admin)/home");
+      }
+      if (role === "student") {
+        router.replace("/(student)/home");
+      }
+      if (role === "company") {
+        router.replace("/(company)/internship");
+      }
+    } catch (err) {}
   }
 
   return (

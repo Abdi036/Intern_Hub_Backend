@@ -17,6 +17,14 @@ interface NetworkError extends Error {
   isNetworkError: boolean;
 }
 
+interface signinResponse {
+  data: {
+    name: string;
+    email: string;
+    role: string;
+  };
+}
+
 // Add error handling utility functions
 const handleApiError = async (response: Response): Promise<never> => {
   let errorMessage = "An error occurred";
@@ -59,7 +67,10 @@ interface AuthContextType {
     password: string;
     role: string;
   }) => Promise<void>;
-  signin: (credentials: { email: string; password: string }) => Promise<void>;
+  signin: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<signinResponse>;
   signout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<any>;
   resetPassword: (token: string, password: string) => Promise<void>;
@@ -186,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Store user data in AsyncStorage
       await AsyncStorage.setItem("user", JSON.stringify(data));
       setUser(data);
+      return data;
     } catch (err: any) {
       return handleError(err);
     } finally {
@@ -200,6 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setError(null);
     }
   };
 

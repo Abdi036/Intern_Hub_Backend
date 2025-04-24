@@ -66,7 +66,6 @@ export default function Home() {
       setHasMore(pageToFetch < totalPages);
       setPage(pageToFetch);
     } catch (error) {
-      console.error("Error fetching internships:", error);
       setError("Failed to load internships");
     } finally {
       setLoading(false);
