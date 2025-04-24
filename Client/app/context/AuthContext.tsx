@@ -119,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(JSON.parse(storedUser));
         }
       } catch (err) {
-        console.error("Error loading stored session:", err);
         setError("Failed to load stored session");
       }
     }
@@ -142,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     throw err;
   };
 
-  //   register user to app
+  // register user to app
   const signup = async (userData: {
     name: string;
     email: string;
@@ -174,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  //   Login user to app
+  // Login user to app
   const signin = async (credentials: { email: string; password: string }) => {
     try {
       setIsLoading(true);
@@ -205,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Add signout function
+  // signout user from the app and set the session to null
   const signout = async () => {
     try {
       await AsyncStorage.removeItem("user");
@@ -217,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // forgot password to trigger token sending to email
   const forgotPassword = async (email: string) => {
     try {
       setIsLoading(true);
@@ -243,6 +243,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // reset password using the token sent to email
+  // and the new password
   const resetPassword = async (token: string, password: string) => {
     try {
       setIsLoading(true);
@@ -270,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // update user profile
   const updateProfile = async (formData: FormData) => {
     try {
       setIsLoading(true);
@@ -297,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // user can update/change password
   const UpdatePassword = async (currentPassword: string, password: string) => {
     try {
       setIsLoading(true);
@@ -324,6 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  //user can delete their account
   const deleteProfile = async () => {
     try {
       setIsLoading(true);
@@ -354,7 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // View all internships
+  // students and admin can View all internships
   const ViewAllInternships = async (page = 1, queryParams = "") => {
     try {
       setIsLoading(true);
@@ -380,10 +385,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return handleError(err);
     } finally {
       setIsLoading(false);
+      setError(null);
     }
   };
 
-  // View internship by id
+  // student can View internship details (get internshipByID)
   const ViewInternship = async (id: string) => {
     try {
       setIsLoading(true);
@@ -407,6 +413,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // admin can delete internship
   const DeleteInternship = async (id: string) => {
     try {
       setIsLoading(true);
@@ -430,7 +437,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
-  // Apply For internship
+
+  // student can Apply For internship
   const ApplyInternship = async (
     internshipId: string,
     applicationData: FormData
@@ -544,6 +552,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Admin can view all users
   const ViewUsers = async () => {
     try {
       setIsLoading(true);
@@ -569,6 +578,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Admin can delete users
   const DeleteUsers = async (userId: string) => {
     try {
       setIsLoading(true);
@@ -596,6 +606,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Note: I have not implemented the Postinternship Api integration in this file.
 
+  // Company can see all their posted internships
   const GetAllMypostedinterships = async () => {
     try {
       setIsLoading(true);
@@ -623,6 +634,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Company can see their specific internship details
   const ViewMyPostedInternship = async (id: string) => {
     try {
       setIsLoading(true);
@@ -648,6 +660,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Company can edit their posted internship
   const EditMyPostedInternship = async (id: string, data: any) => {
     try {
       setIsLoading(true);
@@ -674,6 +687,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Company can delete their posted internship
   const DeleteMyPostedInternship = async (id: string) => {
     try {
       setIsLoading(true);
@@ -703,6 +717,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // company can see all applicants for their internship
   const GetAllApplicants = async (id: string) => {
     try {
       setIsLoading(true);
@@ -728,6 +743,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // company can see specific applicant details
+  // for their internship
   const GetApplicantDetail = async (id: string, studentId: string) => {
     try {
       setIsLoading(true);
@@ -756,6 +773,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // company can update the status of an applicant (accept/reject)
+  // for their internship
   const UpdateApplicationStatus = async (
     applicationId: string,
     status: string

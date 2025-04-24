@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,11 +22,9 @@ interface Internship {
 }
 
 export default function Home() {
-  const { ViewAllInternships } = useAuth();
+  const { ViewAllInternships, isLoading, error } = useAuth();
 
   const [internships, setInternships] = useState<Internship[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -42,35 +40,29 @@ export default function Home() {
   );
 
   const fetchInternships = async (pageToFetch: number) => {
-    try {
-      if (pageToFetch === 1) setLoading(true);
-      else setIsFetchingMore(true);
-
-      const queryParams = new URLSearchParams({
-        page: pageToFetch.toString(),
-        ...(filters.remote && { remote: "true" }),
-        ...(filters.paid && { paid: "true" }),
-      });
-
-      const data = await ViewAllInternships(
-        pageToFetch,
-        queryParams.toString()
-      );
-      const newInternships = data.data.internships || [];
-
-      setInternships((prev) =>
-        pageToFetch === 1 ? newInternships : [...prev, ...newInternships]
-      );
-
-      const totalPages = data.pagination.pages;
-      setHasMore(pageToFetch < totalPages);
-      setPage(pageToFetch);
-    } catch (error) {
-      setError("Failed to load internships");
-    } finally {
-      setLoading(false);
+    if (pageToFetch === 1) {
       setIsFetchingMore(false);
+    } else {
+      setIsFetchingMore(true);
     }
+
+    const queryParams = new URLSearchParams({
+      page: pageToFetch.toString(),
+      ...(filters.remote && { remote: "true" }),
+      ...(filters.paid && { paid: "true" }),
+    });
+
+    const data = await ViewAllInternships(pageToFetch, queryParams.toString());
+    const newInternships = data.data.internships || [];
+
+    setInternships((prev) =>
+      pageToFetch === 1 ? newInternships : [...prev, ...newInternships]
+    );
+
+    const totalPages = data.pagination.pages;
+    setHasMore(pageToFetch < totalPages);
+    setPage(pageToFetch);
+    setIsFetchingMore(false);
   };
 
   const handleLoadMore = () => {
@@ -102,26 +94,53 @@ export default function Home() {
     setPage(1);
   };
 
-  if (loading && page === 1) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-        <ActivityIndicator size="large" color="#4f46e5" />
-        <Text className="mt-4 text-gray-700 text-lg font-semibold">
-          Loading internships...
-        </Text>
-      </View>
-    );
-  }
+  const renderEmptyState = () => {
+    if (isLoading && internships.length === 0) {
+      return (
+        <View className="flex-1 justify-center items-center h-[75vh]">
+          <ActivityIndicator size="large" color="#4f46e5" />
+          <Text className="mt-4 text-gray-700 text-lg font-semibold">
+            Loading internships...
+          </Text>
+        </View>
+      );
+    }
 
-  if (error) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-        <Text className="text-red-500 text-center text-xl font-semibold">
-          {error}
-        </Text>
-      </View>
-    );
-  }
+    if (internships.length === 0) {
+      return (
+        <View className="flex-1 justify-center items-center h-[75vh]">
+          <Text className="text-red-500 text-center text-xl font-semibold">
+            {error}
+          </Text>
+        </View>
+      );
+    }
+
+    if (internships.length === 0) {
+      let message = "No internships available at the moment.";
+      if (!filters.remote) {
+        message = "No remote internships available at the moment.";
+      } else if (!filters.paid) {
+        message = "No paid internships available at the moment.";
+      }
+
+      return (
+        <View className="flex-1 justify-center items-center bg-gray-100 p-4">
+          <Text className="text-gray-600 text-center text-xl font-semibold">
+            {message}
+          </Text>
+          <TouchableOpacity
+            onPress={resetFilters}
+            className="mt-4 bg-indigo-600 px-6 py-3 rounded-full"
+          >
+            <Text className="text-white font-medium">View All Internships</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -178,9 +197,7 @@ export default function Home() {
               <TouchableOpacity
                 onPress={resetFilters}
                 className={`px-4 py-2 rounded-full ${
-                  !filters.remote && !filters.paid
-                    ? "bg-indigo-600"
-                    : "bg-indigo-300"
+                  !filters.remote && !filters.paid ? "bg-black" : "bg-slate-400"
                 }`}
               >
                 <Text className="text-white font-medium">All</Text>
@@ -188,7 +205,7 @@ export default function Home() {
               <TouchableOpacity
                 onPress={() => toggleFilter("remote")}
                 className={`px-4 py-2 rounded-full ${
-                  filters.remote ? "bg-indigo-600" : "bg-indigo-300"
+                  filters.remote ? "bg-black" : "bg-slate-400"
                 }`}
               >
                 <Text className="text-white font-medium">Remote</Text>
@@ -196,7 +213,7 @@ export default function Home() {
               <TouchableOpacity
                 onPress={() => toggleFilter("paid")}
                 className={`px-4 py-2 rounded-full ${
-                  filters.paid ? "bg-indigo-600" : "bg-indigo-300"
+                  filters.paid ? "bg-black" : "bg-slate-400"
                 }`}
               >
                 <Text className="text-white font-medium">Paid</Text>
@@ -206,16 +223,7 @@ export default function Home() {
         )}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          isFetchingMore ? (
-            <View className="py-6 items-center justify-center">
-              <ActivityIndicator size="small" color="#4f46e5" />
-              <Text className="text-sm text-gray-600 mt-2">
-                Loading more internships...
-              </Text>
-            </View>
-          ) : null
-        }
+        ListEmptyComponent={renderEmptyState}
       />
     </SafeAreaView>
   );

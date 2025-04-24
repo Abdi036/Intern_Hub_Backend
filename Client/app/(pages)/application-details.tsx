@@ -32,6 +32,10 @@ export default function ApplicationDetails() {
     }
   }, [id]);
 
+  const handleBack = () => {
+    router.replace("/(student)/applications");
+  };
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
@@ -64,7 +68,7 @@ export default function ApplicationDetails() {
             try {
               await DeleteApplication(applicationId);
               router.replace({
-                pathname: "../(tabs)/applications",
+                pathname: "/(student)/applications",
                 params: { refresh: Date.now().toString() },
               });
             } catch (error) {
@@ -189,7 +193,7 @@ export default function ApplicationDetails() {
 
         <TouchableOpacity
           className="flex-row items-center justify-center bg-gray-300 p-4 rounded-xl"
-          onPress={() => router.back()}
+          onPress={() => handleBack()}
         >
           <Ionicons name="arrow-back-outline" size={20} color="#1F2937" />
           <Text className="text-gray-800 text-base font-medium ml-2">

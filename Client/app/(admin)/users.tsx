@@ -32,9 +32,7 @@ export default function Users() {
         try {
           const response = await ViewUsers();
           setUsers(response.data.users);
-        } catch (error: any) {
-          console.error("Error fetching users:", error);
-        }
+        } catch (error: any) {}
       };
 
       fetchUsers();
@@ -59,7 +57,6 @@ export default function Users() {
               await DeleteUsers(userId);
               setUsers((prev) => prev.filter((user) => user._id !== userId));
             } catch (error) {
-              console.error("Error deleting user:", error);
               Alert.alert("Error", "Failed to delete user. Please try again.");
             }
           },
