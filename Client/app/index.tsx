@@ -14,7 +14,7 @@ export default function App() {
     if (user) {
       router.push("/home");
     } else {
-      router.push("/signin");
+      router.push("/(auth)/signin");
     }
   };
 
