@@ -16,15 +16,15 @@ const errorMiddleware = require("./middleware/errorMiddleware");
 dotenv.config();
 const app = express();
 
-// ✅ Define rate limiter before use
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
+// Define rate limiter before use
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 500,
+//   message: "Too many requests from this IP, please try again later.",
+// });
 
-// ✅ Apply security-related middleware first
-app.use(limiter);
+// Apply security-related middleware first
+// app.use(limiter);
 app.use(xss());
 app.use(mongoSanitize());
 
