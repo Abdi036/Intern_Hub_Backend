@@ -4,7 +4,8 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const sendEmail = require("../utils/email");
 const crypto = require("crypto");
-const { processImage } = require("../middleware/uploadMiddleware");
+const cloudinary = require("../utils/cloudinary");
+const streamifier = require("streamifier");
 
 function generateToken(res, _id) {
   const token = jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -79,55 +80,6 @@ exports.Signin = catchAsync(async (req, res, next) => {
     token,
   });
 });
-
-// v1 forgot password
-// exports.ForgotPassword = catchAsync(async (req, res, next) => {
-//   const user = await User.findOne({ email: req.body.email });
-
-//   if (!user) {
-//     return next(new AppError("User not found!", 404));
-//   }
-
-//   const resetToken = user.createPasswordResetToken();
-//   await user.save({ validateBeforeSave: false });
-
-//   const resetURL = `${req.protocol}://localhost:3000/api/v1/user/reset-password/${resetToken}`;
-
-//   const textMessage = `If you forgot your password, click the link below to reset it: ${resetURL}.\nIf you didn't request this, please ignore this email.`;
-
-//   const htmlMessage = `
-//     <p>If you forgot your password, click the link below to reset it:</p>
-//     <a href="${resetURL}">Reset Password</a>
-//     <p>If you didn't request this, please ignore this email.</p>
-//   `;
-
-//   try {
-//     await sendEmail({
-//       email: user.email,
-//       subject: "Your password reset token (valid for 10 minutes)",
-//       text: textMessage,
-//       html: htmlMessage,
-//     });
-
-//     res.status(200).json({
-//       status: "success",
-//       message: "Token sent to email",
-//     });
-//   } catch (err) {
-//     user.passwordResetToken = undefined;
-//     user.passwordResetExpires = undefined;
-
-//     console.log(err);
-//     await user.save({ validateBeforeSave: false });
-
-//     return next(
-//       new AppError(
-//         "There was an error sending the email. Try again later!",
-//         500
-//       )
-//     );
-//   }
-// });
 
 // v2 ForgotPassword
 exports.ForgotPassword = catchAsync(async (req, res, next) => {
@@ -238,39 +190,77 @@ exports.UpdatePassword = catchAsync(async (req, res, next) => {
   });
 });
 
-// v1 update my account
+// v2 UpdateMyAccount
 // exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
-//   // 1) Create an error if user tries to update password
-//   if (req.body.password) {
+//   // 1) Create error if user POSTs password data
+//   if (req.body.password || req.body.passwordConfirm) {
 //     return next(
 //       new AppError(
-//         "This route is not for password updates. Please use /updatePassword.",
+//         "This route is not for password updates. Please use /updateMyPassword.",
 //         400
 //       )
 //     );
 //   }
 
-//   // 2) Filter out unwanted fields
-//   // added photo
-//   const filteredBody = filterObj(req.body, "name", "email");
+//   // 2) Filtered out unallowed fields names that are not allowed to be updated
+//   const filteredBody = filterObj(req.body, "name", "email", "photo");
 
-//   // 3) Update user document
-//   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
-//     new: true,
-//     runValidators: true,
-//   });
+//   // 3) Handle photo upload if present
+//   if (req.file) {
+//     const uploadResult = await cloudinary.uploader.upload_stream(
+//       {
+//         folder: "user_photos", // Cloudinary folder
+//         public_id: `user-${req.user.id}`,
+//         transformation: [{ width: 500, height: 500, crop: "fill" }],
+//       },
+//       async (error, result) => {
+//         if (error) {
+//           return next(new AppError("Cloudinary upload failed", 500));
+//         }
+//         filteredBody.photo = result.secure_url;
 
-//   res.status(200).json({
-//     status: "success",
-//     data: {
-//       user: updatedUser,
-//     },
-//   });
+//         // Update user with new photo
+//         const updatedUser = await User.findByIdAndUpdate(
+//           req.user.id,
+//           filteredBody,
+//           {
+//             new: true,
+//             runValidators: true,
+//           }
+//         );
+
+//         res.status(200).json({
+//           status: "success",
+//           data: {
+//             user: updatedUser,
+//           },
+//         });
+//       }
+//     );
+
+//     // Pipe image buffer to Cloudinary
+//     require("streamifier").createReadStream(req.file.buffer).pipe(uploadResult);
+//   } else {
+//     const updatedUser = await User.findByIdAndUpdate(
+//       req.user.id,
+//       filteredBody,
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
+
+//     res.status(200).json({
+//       status: "success",
+//       data: {
+//         user: updatedUser,
+//       },
+//     });
+//   }
 // });
 
-// v2 UpdateMyAccount
 exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
-  // 1) Create error if user POSTs password data
+  // 1) Disallow password updates via this route
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
@@ -280,16 +270,32 @@ exports.UpdateMyAccount = catchAsync(async (req, res, next) => {
     );
   }
 
-  // 2) Filtered out unallowed fields names that are not allowed to be updated
+  // 2) Filter out unallowed fields
   const filteredBody = filterObj(req.body, "name", "email", "photo");
 
-  // 3) Handle photo upload if present
+  // 3) If file is uploaded, handle Cloudinary upload
   if (req.file) {
-    const filename = await processImage(req.file, req.user.id);
-    filteredBody.photo = filename;
+    const streamUpload = (buffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "user_photos",
+            public_id: `user-${req.user.id}`,
+            transformation: [{ width: 500, height: 500, crop: "fill" }],
+          },
+          (error, result) => {
+            if (error) reject(new AppError("Cloudinary upload failed", 500));
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(buffer).pipe(stream);
+      });
+
+    const result = await streamUpload(req.file.buffer);
+    filteredBody.photo = result.secure_url;
   }
 
-  // 3) Update user document
+  // 4) Update user
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true,
