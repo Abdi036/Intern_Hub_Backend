@@ -31,13 +31,17 @@ function filterObj(obj, ...allowedFields) {
 }
 
 exports.Signup = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new AppError("User already exists with this email.", 400));
+  }
   const newUser = await User.create({
     name: req.body.name,
     email: req.body.email,
     role: req.body.role,
     password: req.body.password,
   });
-
   const token = generateToken(res, newUser._id);
 
   res.status(201).json({
