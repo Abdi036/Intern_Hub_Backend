@@ -206,8 +206,9 @@ exports.GetInternships = catchAsync(async (req, res, next) => {
     query.paid = req.query.paid === "true";
   }
 
-  // Execute query with pagination and filters
+  // Execute query with pagination, filters, and sorting by createdAt (latest first)
   const internships = await Internship.find(query)
+    .sort({ createdAt: -1 }) // Sort newest first
     .skip(skip)
     .limit(limit)
     .populate("companyId", "name");
