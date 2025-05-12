@@ -3,40 +3,49 @@ const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "User must have a name"],
-    trim: true,
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "User must have a name"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "User must have an email"],
+      unique: true,
+      lowercase: true,
+      validate: [validator.isEmail, "Please provide a valid email"],
+    },
+    role: {
+      type: String,
+      required: [true, "User must have a role"],
+      enum: ["student", "company", "admin"],
+    },
+    photo: {
+      type: String,
+      default: "default-user.jpg",
+    },
+    password: {
+      type: String,
+      required: [true, "User must have a password"],
+      minlength: [8, "Password must be at least 8 characters"],
+      select: false,
+    },
+    otp: String,
+    otpExpires: Date,
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
   },
-  email: {
-    type: String,
-    required: [true, "User must have an email"],
-    unique: true,
-    lowercase: true,
-    validate: [validator.isEmail, "Please provide a valid email"],
-  },
-  role: {
-    type: String,
-    required: [true, "User must have a role"],
-    enum: ["student", "company", "admin"]
-  },
-  photo: {
-    type: String,
-    default: 'default-user.jpg'
-  },
-  password: {
-    type: String,
-    required: [true, "User must have a password"],
-    minlength: [8, "Password must be at least 8 characters"],
-    select: false,
-  },
-  passwordChangedAt: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-}, {
-  timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
 // hash or encrypt password before saveing on database
 userSchema.pre("save", async function (next) {
@@ -54,6 +63,14 @@ userSchema.pre("save", function (next) {
 });
 
 //////////////////////// instance methods //////////////////
+
+userSchema.methods.createEmailOTP = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+  this.otp = otp;
+  this.otpExpires = Date.now() + 10 * 60 * 1000; // expires in 10 mins
+  return otp;
+};
+
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword

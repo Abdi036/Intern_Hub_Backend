@@ -30,23 +30,114 @@ function filterObj(obj, ...allowedFields) {
   return newObj;
 }
 
+// exports.Signup = catchAsync(async (req, res, next) => {
+//   const { email } = req.body;
+//   const existingUser = await User.findOne({ email });
+//   if (existingUser) {
+//     return next(new AppError("User already exists with this email.", 400));
+//   }
+//   const newUser = await User.create({
+//     name: req.body.name,
+//     email: req.body.email,
+//     role: req.body.role,
+//     password: req.body.password,
+//   });
+//   const token = generateToken(res, newUser._id);
+//   const otp = User.createOtp();
+
+//   const message = `Your OTP code is: ${otp}. It will expire in 10 minutes.`;
+
+//   const htmlMessage = `
+//     <div style="font-family: Arial; max-width: 600px;">
+//       <h2>Welcome to InternHub!</h2>
+//       <p>Please use the OTP below to verify your email:</p>
+//       <h3 style="color: green;">${otp}</h3>
+//       <p>This OTP will expire in 10 minutes.</p>
+//     </div>
+//   `;
+
+//   await sendEmail({
+//     email: User.email,
+//     subject: "Verify your email - OTP",
+//     message,
+//     html: htmlMessage,
+//   });
+
+//   res.status(201).json({
+//     status: "success",
+//     token,
+//   });
+// });
 exports.Signup = catchAsync(async (req, res, next) => {
-  const { email } = req.body;
+  const { name, email, password, role } = req.body;
+
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return next(new AppError("User already exists with this email.", 400));
   }
+
   const newUser = await User.create({
     name: req.body.name,
     email: req.body.email,
     role: req.body.role,
     password: req.body.password,
   });
-  const token = generateToken(res, newUser._id);
 
+  // Generate OTP
+  const otp = newUser.createEmailOTP();
+  await newUser.save({ validateBeforeSave: false });
+
+  // Prepare email content
+  const message = `Your OTP code is: ${otp}. It will expire in 10 minutes.`;
+
+  const htmlMessage = `
+    <div style="font-family: Arial; max-width: 600px;">
+      <h2>Welcome to InternHub!</h2>
+      <p>Please use the OTP below to verify your email:</p>
+      <h3 style="color: green;">${otp}</h3>
+      <p>This OTP will expire in 10 minutes.</p>
+    </div>
+  `;
+
+  await sendEmail({
+    email: newUser.email,
+    subject: "Verify your email - OTP",
+    message,
+    html: htmlMessage,
+  });
+
+  // Send response
+  const token = generateToken(res, newUser._id);
   res.status(201).json({
     status: "success",
     token,
+    message: "OTP sent to your email. Please verify to continue.",
+  });
+});
+
+exports.verifyEmail = catchAsync(async (req, res, next) => {
+  const { email, otp } = req.body;
+
+  const user = await User.findOne({ email, otp });
+
+  if (!user) {
+    return next(new AppError("Invalid OTP or email.", 400));
+  }
+
+  if (user.otpExpires < Date.now()) {
+    return next(
+      new AppError("OTP has expired. Please request a new one.", 400)
+    );
+  }
+
+  user.isVerified = true;
+  user.otp = undefined;
+  user.otpExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: "success",
+    message: "Email successfully verified.",
   });
 });
 
@@ -59,6 +150,9 @@ exports.Signin = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select("+password");
 
+  if (!user.isVerified) {
+    return next(new AppError("Please verify your email first.", 400));
+  }
   if (!user) {
     return next(
       new AppError("No user found with this email please signup!", 404)

@@ -11,11 +11,13 @@ const {
   UpdatePassword,
   UpdateMyAccount,
   DeleteMyAccount,
+  verifyEmail,
 } = require("../controllers/userController");
 const { upload } = require("../middleware/uploadMiddleware");
 
 router
   .post("/signup", Signup)
+  .post("/verify-email", verifyEmail)
   .post("/signin", Signin)
   .post("/forgot-password", ForgotPassword);
 router.patch("/reset-password", ResetPassword);
