@@ -12,12 +12,14 @@ const {
   UpdateMyAccount,
   DeleteMyAccount,
   verifyEmail,
+  resendOTP,
 } = require("../controllers/userController");
 const { upload } = require("../middleware/uploadMiddleware");
 
 router
   .post("/signup", Signup)
   .post("/verify-email", verifyEmail)
+  .post("/resend-otp", resendOTP)
   .post("/signin", Signin)
   .post("/forgot-password", ForgotPassword);
 router.patch("/reset-password", ResetPassword);

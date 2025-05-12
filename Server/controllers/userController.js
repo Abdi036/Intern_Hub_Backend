@@ -141,6 +141,47 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.resendOTP = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError("User not found with this email.", 404));
+  }
+
+  if (user.isVerified) {
+    return next(new AppError("This email is already verified.", 400));
+  }
+
+  // Generate and set new OTP
+  const newOtp = user.createEmailOTP();
+  await user.save({ validateBeforeSave: false });
+
+  // Compose message
+  const message = `Your new OTP code is: ${newOtp}. It will expire in 10 minutes.`;
+  const htmlMessage = `
+    <div style="font-family: Arial; max-width: 600px;">
+      <h2>InternHub OTP Resend</h2>
+      <p>Please use the OTP below to verify your email:</p>
+      <h3 style="color: green;">${newOtp}</h3>
+      <p>This OTP will expire in 10 minutes.</p>
+    </div>
+  `;
+
+  await sendEmail({
+    email: user.email,
+    subject: "Resend OTP - InternHub",
+    message,
+    html: htmlMessage,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "A new OTP has been sent to your email.",
+  });
+});
+
+
 exports.Signin = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
