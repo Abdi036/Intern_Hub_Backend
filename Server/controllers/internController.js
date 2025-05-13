@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../utils/cloudinary");
 
+
 exports.PostInternship = catchAsync(async (req, res, next) => {
   const {
     title,

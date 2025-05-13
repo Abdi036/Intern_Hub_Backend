@@ -181,7 +181,6 @@ exports.resendOTP = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.Signin = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -459,4 +458,50 @@ exports.DeleteMyAccount = catchAsync(async (req, res, next) => {
     status: "success",
     message: "Internship deleted successfully",
   });
+});
+
+exports.ApproveMyCompanyAccount = catchAsync(async (req, res, next) => {
+  const user = req.user;
+
+  if (!req.file) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Please upload an approval letter image.",
+    });
+  }
+
+  // Use a Promise wrapper to handle cloudinary.upload_stream with async/await
+  const uploadToCloudinary = () =>
+    new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "intern_hub/approval_letters",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+  try {
+    const result = await uploadToCloudinary();
+
+    // Update user document
+    user.approvalLetter = result.secure_url;
+    user.approved = "pending";
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      status: "success",
+      message: "Approval letter uploaded successfully. Awaiting admin review.",
+      data: {
+        approvalImage: result.secure_url,
+      },
+    });
+  } catch (err) {
+    return next(new AppError("Cloudinary upload failed.", 500));
+  }
 });

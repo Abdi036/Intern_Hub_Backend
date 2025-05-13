@@ -1,5 +1,9 @@
 const express = require("express");
-const { protect, restrictTo } = require("../middleware/authMiddleware");
+const {
+  protect,
+  restrictTo,
+  isApproved,
+} = require("../middleware/authMiddleware");
 const upload = require("../middleware/pdfUploadMiddleware");
 const {
   PostInternship,
@@ -16,6 +20,7 @@ const {
   GetAllApplicants,
   GetApplicant,
   UpdateApplicationStatus,
+  ApproveMyCompanyAccount,
 } = require("../controllers/internController");
 
 const router = express.Router();
@@ -27,7 +32,13 @@ router.use(protect);
 router.get("/", restrictTo("student", "admin"), GetInternships);
 
 // Company Routes
-router.post("/postInternship", restrictTo("company"), PostInternship);
+router.post(
+  "/postInternship",
+  restrictTo("company"),
+  isApproved,
+  PostInternship
+);
+
 router.get(
   "/allMypostedInterships",
   restrictTo("company"),

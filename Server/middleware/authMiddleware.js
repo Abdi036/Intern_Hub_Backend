@@ -57,3 +57,14 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+exports.isApproved = (req, res, next) => {
+  if (req.user.role === "company") {
+    if (req.user.approved === "pending" || req.user.approved === "rejected") {
+      return next(
+        new AppError("You are not approved to perform this action.", 403)
+      );
+    }
+  }
+  next();
+};

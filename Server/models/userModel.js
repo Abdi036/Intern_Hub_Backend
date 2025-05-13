@@ -38,9 +38,20 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    approvalLetter: {
+      type: String,
+    },
+    approved: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+  },
+  {
+    timestamps: true,
   },
   {
     timestamps: true,

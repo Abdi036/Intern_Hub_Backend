@@ -13,6 +13,7 @@ const {
   DeleteMyAccount,
   verifyEmail,
   resendOTP,
+  ApproveMyCompanyAccount,
 } = require("../controllers/userController");
 const { upload } = require("../middleware/uploadMiddleware");
 
@@ -27,5 +28,11 @@ router.patch("/update-password", protect, UpdatePassword);
 // router.patch("/update-me", protect, UpdateMyAccount);
 router.patch("/update-me", protect, upload.single("photo"), UpdateMyAccount);
 router.delete("/delete-me", protect, DeleteMyAccount);
+router.post(
+  "/upload-approval-letter",
+  protect,
+  upload.single("approvalLetter"),
+  ApproveMyCompanyAccount
+);
 
 module.exports = router;
