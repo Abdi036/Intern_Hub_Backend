@@ -204,7 +204,7 @@ exports.Signin = catchAsync(async (req, res, next) => {
   }
 
   const token = generateToken(res, user._id);
-  const { name, role, email: userEmail, photo, _id } = user;
+  const { name, role, email: userEmail, photo, _id, approved } = user;
 
   res.status(200).json({
     status: "success",
@@ -213,6 +213,7 @@ exports.Signin = catchAsync(async (req, res, next) => {
       role,
       email: userEmail,
       photo,
+      approved,
       _id,
     },
     token,
