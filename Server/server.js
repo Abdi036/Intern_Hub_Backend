@@ -10,6 +10,7 @@ const rateLimit = require("express-rate-limit");
 const setupDefaultImage = require("./utils/setupDefaultImage");
 const authRoute = require("./routes/authRoute");
 const InternsRoute = require("./routes/InternshipRoute");
+const ReviewRoute = require("./routes/reviewRoute");
 const adminRoute = require("./routes/adminRoute");
 const errorMiddleware = require("./middleware/errorMiddleware");
 
@@ -48,6 +49,7 @@ app.use("/images/users", express.static("public/images/users"));
 app.use("/api/v1/user", authRoute);
 app.use("/api/v1/internships", InternsRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/reviews", ReviewRoute);
 
 // Global Error Handling Middleware
 app.use(errorMiddleware);

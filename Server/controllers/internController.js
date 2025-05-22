@@ -8,7 +8,6 @@ const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../utils/cloudinary");
 
-
 exports.PostInternship = catchAsync(async (req, res, next) => {
   const {
     title,
@@ -237,7 +236,9 @@ exports.GetInternships = catchAsync(async (req, res, next) => {
 });
 
 exports.GetInternshipById = catchAsync(async (req, res, next) => {
-  const internship = await Internship.findById(req.params.id);
+  const internship = await Internship.findById(req.params.id).populate(
+    "reviews"
+  );
   if (!internship) {
     return next(new AppError("No internship found with that ID", 404));
   }
@@ -246,71 +247,6 @@ exports.GetInternshipById = catchAsync(async (req, res, next) => {
     internship,
   });
 });
-
-// exports.ApplyInternship = catchAsync(async (req, res, next) => {
-//   // 1) Check if internship exists
-//   const internship = await Internship.findById(req.params.internshipId);
-//   if (!internship) {
-//     return next(new AppError("No internship found with that ID", 404));
-//   }
-
-//   // 2) Check if user has already applied
-//   const existingApplication = await Application.findOne({
-//     internshipId: req.params.internshipId,
-//     studentId: req.user._id,
-//   });
-
-//   if (existingApplication) {
-//     return next(
-//       new AppError("You have already applied for this internship", 400)
-//     );
-//   }
-
-//   // 3) Handle PDF upload
-//   if (!req.file) {
-//     return next(
-//       new AppError("Please upload your cover letter as a PDF file", 400)
-//     );
-//   }
-
-//   // 4) Save PDF file
-//   const pdfFilename = `cover-letter-${req.user._id}-${Date.now()}.pdf`;
-//   const pdfPath = path.join(
-//     "public",
-//     "documents",
-//     "cover-letters",
-//     pdfFilename
-//   );
-
-//   // Ensure directory exists
-//   const dir = path.dirname(pdfPath);
-//   if (!fs.existsSync(dir)) {
-//     fs.mkdirSync(dir, { recursive: true });
-//   }
-
-//   // Save the PDF file
-//   fs.writeFileSync(pdfPath, req.file.buffer);
-
-//   // 5) Create application
-//   const application = await Application.create({
-//     internshipId: req.params.internshipId,
-//     studentId: req.user._id,
-//     coverLetter: pdfFilename,
-//     portfolio: req.body.portfolio,
-//     status: "pending",
-//   });
-
-//   // 6) Add student to internship's applicants array
-//   internship.applicants.push(req.user._id);
-//   await internship.save();
-
-//   res.status(201).json({
-//     status: "success",
-//     data: {
-//       application,
-//     },
-//   });
-// });
 
 exports.ApplyInternship = catchAsync(async (req, res, next) => {
   // 1) Check if internship exists
