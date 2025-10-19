@@ -64,6 +64,16 @@ const InternshipSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    ratingsAverage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    ratingsQuantity: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     toJSON: { virtuals: true },
