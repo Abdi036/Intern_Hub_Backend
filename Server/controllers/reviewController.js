@@ -15,6 +15,18 @@ exports.upsertMyReview = catchAsync(async (req, res, next) => {
 
   const internship = await Internship.findById(internshipId);
   if (!internship) return next(new AppError("Internship not found", 404));
+  // Only allow reviewing after the internship has finished (after endDate)
+  if (
+    internship.endDate &&
+    Date.now() <= new Date(internship.endDate).getTime()
+  ) {
+    return next(
+      new AppError(
+        "You can only review this internship after it has finished.",
+        400
+      )
+    );
+  }
 
   const updated = await Review.findOneAndUpdate(
     { internship: internshipId, user: req.user._id },
@@ -54,6 +66,20 @@ exports.updateMyReview = catchAsync(async (req, res, next) => {
   });
   if (!existing)
     return next(new AppError("You haven't reviewed this internship yet", 404));
+
+  // Prevent updating a review before the internship has finished
+  const internshipForUpdate = await Internship.findById(internshipId);
+  if (
+    internshipForUpdate.endDate &&
+    Date.now() <= new Date(internshipForUpdate.endDate).getTime()
+  ) {
+    return next(
+      new AppError(
+        "You can only update your review after the internship has finished.",
+        400
+      )
+    );
+  }
 
   if (review !== undefined) existing.review = review;
   if (rating !== undefined) existing.rating = rating;
