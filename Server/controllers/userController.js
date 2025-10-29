@@ -83,50 +83,58 @@ exports.Signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
   });
 
-  // Generate OTP
-  const otp = newUser.createEmailOTP();
-  await newUser.save({ validateBeforeSave: false });
+  // EMAIL VERIFICATION DISABLED - Generate OTP
+  // const otp = newUser.createEmailOTP();
+  // await newUser.save({ validateBeforeSave: false });
 
   // Prepare email content
-  const message = `Your OTP code is: ${otp}. It will expire in 10 minutes.`;
+  // const message = `Your OTP code is: ${otp}. It will expire in 10 minutes.`;
 
-  const htmlMessage = `
-    <div style="font-family: Arial; max-width: 600px;">
-      <h2>Welcome to InternHub!</h2>
-      <p>Please use the OTP below to verify your email:</p>
-      <h3 style="color: green;">${otp}</h3>
-      <p>This OTP will expire in 10 minutes.</p>
-    </div>
-  `;
+  // const htmlMessage = `
+  //   <div style="font-family: Arial; max-width: 600px;">
+  //     <h2>Welcome to InternHub!</h2>
+  //     <p>Please use the OTP below to verify your email:</p>
+  //     <h3 style="color: green;">${otp}</h3>
+  //     <p>This OTP will expire in 10 minutes.</p>
+  //   </div>
+  // `;
 
   // Try to send email, but don't fail signup if email fails
-  try {
-    await sendEmail({
-      email: newUser.email,
-      subject: "Verify your email - OTP",
-      message,
-      html: htmlMessage,
-    });
+  // try {
+  //   await sendEmail({
+  //     email: newUser.email,
+  //     subject: "Verify your email - OTP",
+  //     message,
+  //     html: htmlMessage,
+  //   });
 
-    // Send response if email sent successfully
-    const token = generateToken(res, newUser._id);
-    res.status(201).json({
-      status: "success",
-      token,
-      message: "OTP sent to your email. Please verify to continue.",
-    });
-  } catch (error) {
-    console.error("Email sending failed:", error);
+  //   // Send response if email sent successfully
+  //   const token = generateToken(res, newUser._id);
+  //   res.status(201).json({
+  //     status: "success",
+  //     token,
+  //     message: "OTP sent to your email. Please verify to continue.",
+  //   });
+  // } catch (error) {
+  //   console.error("Email sending failed:", error);
     
-    // Still allow signup but inform user about email issue
-    const token = generateToken(res, newUser._id);
-    res.status(201).json({
-      status: "success",
-      token,
-      message: "Account created successfully! However, we couldn't send the OTP email. Please use the 'Resend OTP' option.",
-      emailError: true,
-    });
-  }
+  //   // Still allow signup but inform user about email issue
+  //   const token = generateToken(res, newUser._id);
+  //   res.status(201).json({
+  //     status: "success",
+  //     token,
+  //     message: "Account created successfully! However, we couldn't send the OTP email. Please use the 'Resend OTP' option.",
+  //     emailError: true,
+  //   });
+  // }
+
+  // EMAIL VERIFICATION DISABLED - Direct signup without verification
+  const token = generateToken(res, newUser._id);
+  res.status(201).json({
+    status: "success",
+    token,
+    message: "Account created successfully!",
+  });
 });
 
 exports.verifyEmail = catchAsync(async (req, res, next) => {
@@ -214,9 +222,10 @@ exports.Signin = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select("+password");
 
-  if (!user.isVerified) {
-    return next(new AppError("Please verify your email first.", 400));
-  }
+  // EMAIL VERIFICATION DISABLED
+  // if (!user.isVerified) {
+  //   return next(new AppError("Please verify your email first.", 400));
+  // }
   if (!user) {
     return next(
       new AppError("No user found with this email please signup!", 404)
