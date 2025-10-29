@@ -99,20 +99,34 @@ exports.Signup = catchAsync(async (req, res, next) => {
     </div>
   `;
 
-  await sendEmail({
-    email: newUser.email,
-    subject: "Verify your email - OTP",
-    message,
-    html: htmlMessage,
-  });
+  // Try to send email, but don't fail signup if email fails
+  try {
+    await sendEmail({
+      email: newUser.email,
+      subject: "Verify your email - OTP",
+      message,
+      html: htmlMessage,
+    });
 
-  // Send response
-  const token = generateToken(res, newUser._id);
-  res.status(201).json({
-    status: "success",
-    token,
-    message: "OTP sent to your email. Please verify to continue.",
-  });
+    // Send response if email sent successfully
+    const token = generateToken(res, newUser._id);
+    res.status(201).json({
+      status: "success",
+      token,
+      message: "OTP sent to your email. Please verify to continue.",
+    });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    
+    // Still allow signup but inform user about email issue
+    const token = generateToken(res, newUser._id);
+    res.status(201).json({
+      status: "success",
+      token,
+      message: "Account created successfully! However, we couldn't send the OTP email. Please use the 'Resend OTP' option.",
+      emailError: true,
+    });
+  }
 });
 
 exports.verifyEmail = catchAsync(async (req, res, next) => {
@@ -168,17 +182,27 @@ exports.resendOTP = catchAsync(async (req, res, next) => {
     </div>
   `;
 
-  await sendEmail({
-    email: user.email,
-    subject: "Resend OTP - InternHub",
-    message,
-    html: htmlMessage,
-  });
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Resend OTP - InternHub",
+      message,
+      html: htmlMessage,
+    });
 
-  res.status(200).json({
-    status: "success",
-    message: "A new OTP has been sent to your email.",
-  });
+    res.status(200).json({
+      status: "success",
+      message: "A new OTP has been sent to your email.",
+    });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    return next(
+      new AppError(
+        "Failed to send OTP email. Please check your email configuration or try again later.",
+        500
+      )
+    );
+  }
 });
 
 exports.Signin = catchAsync(async (req, res, next) => {
