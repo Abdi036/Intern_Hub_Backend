@@ -45,6 +45,16 @@ mongoose
 // Static File Serving
 app.use("/images/users", express.static("public/images/users"));
 
+// Health Check Endpoint (for Render and monitoring)
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
 // Routes
 app.use("/api/v1/user", authRoute);
 app.use("/api/v1/internships", InternsRoute);

@@ -103,6 +103,73 @@ The Intern_Hub backend is built with modern technologies:
 
 ---
 
+## Deployment to Render (Free Tier)
+
+### Prerequisites for Deployment
+
+- GitHub account with this repository pushed  
+- Render account (sign up at [render.com](https://render.com))  
+- MongoDB Atlas account for cloud database
+
+### Step-by-Step Deployment Guide
+
+1. **Prepare MongoDB Database**
+
+   - Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Get your connection string (format: `mongodb+srv://username:password@cluster.mongodb.net/database`)
+   - Whitelist all IPs (0.0.0.0/0) for Render to connect
+
+2. **Push to GitHub**
+
+   ```bash
+   git add .
+   git commit -m "Prepare for Render deployment"
+   git push origin main
+   ```
+
+3. **Deploy on Render**
+
+   - Go to [Render Dashboard](https://dashboard.render.com/)
+   - Click **"New +"** → **"Blueprint"**
+   - Connect your GitHub repository
+   - Render will auto-detect the `render.yaml` file
+   - Click **"Apply"**
+
+4. **Set Environment Variables**
+
+   In the Render dashboard, go to your service and add these environment variables:
+
+   | Variable | Description | Example |
+   |----------|-------------|---------|
+   | `REMOTE_MONGO_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.net/db` |
+   | `JWT_SECRET` | Secret key for JWT tokens | Generate a random 32+ character string |
+   | `EMAIL_USERNAME` | Gmail address for sending emails | `youremail@gmail.com` |
+   | `EMAIL_PASSWORD` | Gmail app password | Get from Google Account settings |
+   | `CLOUD_NAME` | Cloudinary cloud name | From Cloudinary dashboard |
+   | `CLOUD_API_KEY` | Cloudinary API key | From Cloudinary dashboard |
+   | `CLOUD_API_SECRET` | Cloudinary API secret | From Cloudinary dashboard |
+
+5. **Verify Deployment**
+
+   - Wait for the build to complete (~2-5 minutes)
+   - Your service will be available at: `https://intern-hub-backend.onrender.com`
+   - Test health endpoint: `https://your-service.onrender.com/api/v1/health`
+
+### Important Notes for Free Tier
+
+- **Spin-down after inactivity:** Free tier services sleep after 15 minutes of inactivity and take ~30 seconds to wake up on the first request
+- **750 hours/month:** Free tier includes 750 hours of runtime per month
+- **Database:** Use MongoDB Atlas free tier (512MB storage)
+- **Environment:** Automatically set to `production` via `render.yaml`
+
+### Monitoring Your Deployment
+
+- **Logs:** View real-time logs in Render dashboard
+- **Health Check:** Endpoint at `/api/v1/health` monitors service status
+- **Metrics:** Basic metrics available in Render dashboard
+
+---
+
 ## Technologies Used
 
 **Backend:**  

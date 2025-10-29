@@ -1,0 +1,42 @@
+# Dependencies (will be installed during build)
+node_modules/
+
+# Environment variables (set in Render dashboard)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Docker files (not needed for Render deployment)
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Git
+.git/
+.gitignore
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/

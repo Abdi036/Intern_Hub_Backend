@@ -1,14 +1,17 @@
 services:
   - type: web
-    name: intern-hub-server
+    name: intern-hub-backend
     env: node
-    buildCommand: npm install
+    region: oregon # Free tier region
+    plan: free # Explicitly specify free tier
+    buildCommand: npm ci --only=production
     startCommand: node server.js
+    healthCheckPath: /api/v1/health
     envVars:
-      - key: PORT
-        value: 3000
       - key: NODE_ENV
-        value: development
+        value: production
+      - key: PORT
+        value: 10000 # Render assigns this port automatically
       - key: REMOTE_MONGO_URI
         sync: false
       - key: JWT_SECRET
